@@ -1,0 +1,83 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- DESIGN BASIS: INTERLOCKING SECURE VAULT EMBLEN -->
+    
+    <!-- Outer Ring Drop Shadow -->
+    <path
+        android:strokeColor="#1F2625"
+        android:strokeWidth="2.5"
+        android:strokeAlpha="0.3"
+        android:fillColor="#00000000"
+        android:pathData="M55,23.5 A31.5,31.5 0 1,1 54.99,23.5" />
+
+    <!-- Outer Thin Ring (Light Sage) -->
+    <path
+        android:strokeColor="#98B5A6"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:pathData="M54,22.5 A31.5,31.5 0 1,1 53.99,22.5" />
+
+    <!-- Central Square Drop Shadow -->
+    <path
+        android:fillColor="#1F2625"
+        android:fillAlpha="0.3"
+        android:pathData="M 47,43 h 16 a 4,4 0 0 1 4,4 v 16 a 4,4 0 0 1 -4,4 h -16 a 4,4 0 0 1 -4,-4 v -16 a 4,4 0 0 1 4,-4 Z" />
+
+    <!-- Central Square Layer 1 (Darker Olive Green) -->
+    <path
+        android:fillColor="#475446"
+        android:pathData="M 46,42 h 16 a 4,4 0 0 1 4,4 v 16 a 4,4 0 0 1 -4,4 h -16 a 4,4 0 0 1 -4,-4 v -16 a 4,4 0 0 1 4,-4 Z" />
+
+    <!-- Central Square Layer 2 (Inner Lighter Olive Green) -->
+    <path
+        android:fillColor="#687C67"
+        android:pathData="M 50,46 h 8 a 2,2 0 0 1 2,2 v 8 a 2,2 0 0 1 -2,2 h -8 a 2,2 0 0 1 -2,-2 v -8 a 2,2 0 0 1 2,-2 Z" />
+
+    <!-- Central Square Layer 3 (Dark Charcoal-Green Core) -->
+    <path
+        android:fillColor="#222B2A"
+        android:pathData="M54,50.5 A3.5,3.5 0 1,1 53.99,50.5" />
+
+    <!-- Central Square Layer 4 (Light Sage Core Dot) -->
+    <path
+        android:fillColor="#ACCEBD"
+        android:pathData="M54,52.5 A1.5,1.5 0 1,1 53.99,52.5" />
+
+    <!-- Ribbon 1 Shadow (Light Sage Loop shadow) -->
+    <path
+        android:strokeColor="#1F2625"
+        android:strokeWidth="5.0"
+        android:strokeAlpha="0.25"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M 65,45 C 65,37 57,33 51,33 C 39,33 33,43 33,55 C 33,67 39,77 51,77 C 57,77 65,73 65,65" />
+
+    <!-- Ribbon 1 (Light Sage Loop) -->
+    <path
+        android:strokeColor="#ACCEBD"
+        android:strokeWidth="5.0"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M 64,44 C 64,36 56,32 50,32 C 38,32 32,42 32,54 C 32,66 38,76 50,76 C 56,76 64,72 64,64" />
+
+    <!-- Ribbon 2 Shadow (Dark Green Loop shadow) -->
+    <path
+        android:strokeColor="#1F2625"
+        android:strokeWidth="5.0"
+        android:strokeAlpha="0.25"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M 45,65 C 45,73 53,77 59,77 C 71,77 77,67 77,55 C 77,43 71,33 59,33 C 53,33 45,37 45,45" />
+
+    <!-- Ribbon 2 (Dark Emerald Green Loop) -->
+    <path
+        android:strokeColor="#2E5F3A"
+        android:strokeWidth="5.0"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M 44,64 C 44,72 52,76 58,76 C 70,76 76,66 76,54 C 76,42 70,32 58,32 C 52,32 44,36 44,44" />
+</vector>

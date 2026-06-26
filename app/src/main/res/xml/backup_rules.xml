@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Exclude local secure SQLite database to prevent plaintext backup exposure -->
+    <exclude domain="database" path="privacy_lock_db"/>
+    <exclude domain="database" path="privacy_lock_db-shm"/>
+    <exclude domain="database" path="privacy_lock_db-wal"/>
+</full-backup-content>

@@ -1,0 +1,47 @@
+# Gradle Files
+.gradle/
+build/
+app/build/
+.kotlin/
+
+# IDE & Android Studio Files
+*.iml
+.idea/
+*.ipr
+*.iws
+/out/
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+local.properties
+
+# Secrets, Keys, and Private Configurations
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.p12
+debug.keystore.base64
+
+# OS / Desktop Junk
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Build Outputs & Generated Files
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+**/build/
+**/intermediates/
+**/outputs/
+**/tmp/
+**/reports/
+
+# Crashlytics / Google Services (if applicable)
+google-services.json

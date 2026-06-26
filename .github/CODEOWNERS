@@ -1,0 +1,12 @@
+# CODEOWNERS file for Privacy Lock
+# Every line is a pattern followed by one or more owners (usernames or emails).
+
+# By default, assign everything to the primary maintainer
+*                      indrajithbandarasl@gmail.com
+
+# Critical security and database logic requires mandatory review
+/app/src/main/java/com/example/security/       indrajithbandarasl@gmail.com
+/app/src/main/java/com/example/data/           indrajithbandarasl@gmail.com
+/app/src/main/res/xml/                         indrajithbandarasl@gmail.com
+/app/build.gradle.kts                          indrajithbandarasl@gmail.com
+/build.gradle.kts                              indrajithbandarasl@gmail.com

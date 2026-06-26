@@ -1,0 +1,6 @@
+{
+  "name": "Privacy Lock",
+  "description": "Premium offline-first enterprise privacy and app lock center with secure local storage, intruder detection, and aesthetic Material 3 controls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
