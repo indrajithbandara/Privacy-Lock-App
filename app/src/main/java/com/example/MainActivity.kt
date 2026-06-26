@@ -41,6 +41,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        com.example.security.AppLockManager.init(applicationContext)
 
         setContent {
             val viewModel: PrivacyViewModel = viewModel()

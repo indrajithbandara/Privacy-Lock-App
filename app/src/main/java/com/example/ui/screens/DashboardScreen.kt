@@ -24,16 +24,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.LifecycleEventObserver
 import com.example.data.LockedApp
 import com.example.ui.PrivacyViewModel
 import com.example.ui.components.SimulatedAppIcon
 import com.example.ui.theme.*
+import com.example.security.SecurityUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,6 +50,28 @@ fun DashboardScreen(
     val apps by viewModel.allApps.collectAsStateWithLifecycle()
     val score by viewModel.privacyScore.collectAsStateWithLifecycle()
     val config by viewModel.securityConfig.collectAsStateWithLifecycle()
+
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var isAccessibilityActive by remember { mutableStateOf(false) }
+    var isUsageActive by remember { mutableStateOf(false) }
+    var isOverlayActive by remember { mutableStateOf(false) }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                isAccessibilityActive = SecurityUtils.isAccessibilityServiceEnabled(context)
+                isUsageActive = SecurityUtils.isUsageAccessGranted(context)
+                isOverlayActive = SecurityUtils.isOverlayPermissionGranted(context)
+                // Also trigger a manual sync to check for new apps on resume
+                viewModel.refreshInstalledApps()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     val categories = listOf("All", "System", "Social", "Finance", "Locked")
 
@@ -157,6 +184,84 @@ fun DashboardScreen(
                                 fontSize = 24.sp
                             ),
                             color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+        }
+
+        // System Permissions Check Card (Onboarding flow)
+        val showPermissionCard = !isAccessibilityActive || !isUsageActive || !isOverlayActive
+        if (showPermissionCard) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.12f)
+                    ),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.25f))
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Security,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                            Text(
+                                text = "System Permissions Required",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+
+                        Text(
+                            text = "To enable automatic application locking, please grant the following required system permissions:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // Accessibility Service Permission Row
+                        PermissionStatusRow(
+                            name = "Accessibility Service (Required)",
+                            description = "Locks apps immediately as soon as they are launched",
+                            isGranted = isAccessibilityActive,
+                            onGrantClick = {
+                                SecurityUtils.requestAccessibilityPermission(context)
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.error.copy(alpha = 0.15f))
+
+                        // Usage Access Permission Row
+                        PermissionStatusRow(
+                            name = "Usage Stats Access (Recommended)",
+                            description = "Enhances foreground application scanning accuracy",
+                            isGranted = isUsageActive,
+                            onGrantClick = {
+                                SecurityUtils.requestUsageAccessPermission(context)
+                            }
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.error.copy(alpha = 0.15f))
+
+                        // Overlay Permission Row
+                        PermissionStatusRow(
+                            name = "Display Over Other Apps (Recommended)",
+                            description = "Prevents security bypass overlays",
+                            isGranted = isOverlayActive,
+                            onGrantClick = {
+                                SecurityUtils.requestOverlayPermission(context)
+                            }
                         )
                     }
                 }
@@ -336,7 +441,7 @@ fun SandboxAppLauncherItem(
         verticalArrangement = Arrangement.Center
     ) {
         Box(contentAlignment = Alignment.TopEnd) {
-            SimulatedAppIcon(iconName = app.iconName, size = 48)
+            SimulatedAppIcon(iconName = app.iconName, size = 48, packageName = app.packageName)
 
             // Show a tiny shield overlay if app is locked
             if (app.isLocked) {
@@ -395,7 +500,7 @@ fun AppLockListItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // App Icon
-            SimulatedAppIcon(iconName = app.iconName, size = 42)
+            SimulatedAppIcon(iconName = app.iconName, size = 42, packageName = app.packageName)
 
             Spacer(modifier = Modifier.width(14.dp))
 
@@ -455,6 +560,54 @@ fun AppLockListItem(
                     ),
                     modifier = Modifier.testTag("lock_switch_${app.packageName}")
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun PermissionStatusRow(
+    name: String,
+    description: String,
+    isGranted: Boolean,
+    onGrantClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
+            Text(
+                text = name,
+                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                color = if (isGranted) SoftGreenAccent else MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = description,
+                style = MaterialTheme.typography.labelSmall,
+                color = TextWarmGray
+            )
+        }
+
+        if (isGranted) {
+            Icon(
+                imageVector = Icons.Default.CheckCircle,
+                contentDescription = "Granted",
+                tint = SoftGreenAccent,
+                modifier = Modifier.size(24.dp)
+            )
+        } else {
+            Button(
+                onClick = onGrantClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                ),
+                shape = RoundedCornerShape(12.dp),
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                modifier = Modifier.height(36.dp)
+            ) {
+                Text("Grant", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
     }

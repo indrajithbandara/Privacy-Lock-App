@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Privacy Lock</string>
+    <string name="accessibility_service_description">Enables Privacy Lock to monitor when applications are opened and display a secure lock screen overlay to safeguard your personal data.</string>
 </resources>

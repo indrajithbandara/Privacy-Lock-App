@@ -28,6 +28,9 @@ interface LockedAppDao {
 
     @Query("SELECT * FROM locked_apps WHERE packageName = :packageName")
     suspend fun getApp(packageName: String): LockedApp?
+
+    @Query("SELECT * FROM locked_apps")
+    suspend fun getAllAppsDirect(): List<LockedApp>
 }
 
 @Dao

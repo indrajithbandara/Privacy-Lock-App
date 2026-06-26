@@ -50,7 +50,16 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
         repository = PrivacyRepository(db)
 
         viewModelScope.launch {
-            repository.prepopulateIfNeeded()
+            repository.prepopulateIfNeeded(application)
+        }
+    }
+
+    /**
+     * Scan and sync currently installed physical applications on the device.
+     */
+    fun refreshInstalledApps() {
+        viewModelScope.launch {
+            repository.syncInstalledApps(getApplication())
         }
     }
 

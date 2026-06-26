@@ -36,16 +36,56 @@ import com.example.ui.theme.SecondarySage
 import com.example.ui.theme.TertiarySand
 import com.example.ui.theme.MutedRedAccent
 
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
+import androidx.compose.foundation.Image
+
 /**
- * Custom modern icon helper for simulated apps
+ * Custom modern icon helper for simulated and physical apps
  */
 @Composable
 fun SimulatedAppIcon(
     iconName: String,
     modifier: Modifier = Modifier,
     size: Int = 44,
+    packageName: String? = null,
     backgroundColor: Color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f)
 ) {
+    val context = LocalContext.current
+    val pm = remember { context.packageManager }
+    val drawable = remember(packageName) {
+        if (packageName != null) {
+            try {
+                pm.getApplicationIcon(packageName)
+            } catch (e: Exception) {
+                null
+            }
+        } else {
+            null
+        }
+    }
+
+    if (drawable != null) {
+        val bitmap = remember(drawable) {
+            try {
+                drawable.toBitmap().asImageBitmap()
+            } catch (e: Exception) {
+                null
+            }
+        }
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = "App Icon",
+                modifier = modifier
+                    .size(size.dp)
+                    .clip(RoundedCornerShape(12.dp))
+            )
+            return
+        }
+    }
+
     val (vector, color) = when (iconName) {
         "settings" -> Pair(Icons.Default.Settings, PrimarySage)
         "play_store" -> Pair(Icons.Default.Shop, Color(0xFF34A853))
