@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.animateColorAsState
@@ -65,6 +66,12 @@ class LockActivity : ComponentActivity() {
             targetPackageName
         }
 
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                goHomeAndFinish()
+            }
+        })
+
         setContent {
             var securityConfig by remember { mutableStateOf<SecurityConfig?>(null) }
 
@@ -115,10 +122,6 @@ class LockActivity : ComponentActivity() {
                 }
             }
         }
-    }
-
-    override fun onBackPressed() {
-        goHomeAndFinish()
     }
 
     private fun goHomeAndFinish() {
