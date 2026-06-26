@@ -1,5 +1,6 @@
 package com.example.ui.components
 
+import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.spring
@@ -127,8 +128,27 @@ fun SecureKeypad(
     onDeleteClick: () -> Unit,
     onClearClick: () -> Unit,
     randomizeLayout: Boolean,
+    vibrateOnKeyPress: Boolean = true,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val vibrator = remember { context.getSystemService(Context.VIBRATOR_SERVICE) as? android.os.Vibrator }
+
+    val triggerVibration = {
+        if (vibrateOnKeyPress) {
+            try {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    vibrator?.vibrate(android.os.VibrationEffect.createOneShot(35, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibrator?.vibrate(35)
+                }
+            } catch (e: Exception) {
+                // Ignore
+            }
+        }
+    }
+
     val numbers = remember(randomizeLayout) {
         val list = (0..9).map { it.toString() }.toMutableList()
         if (randomizeLayout) {
@@ -152,7 +172,10 @@ fun SecureKeypad(
                     val num = numbers[row * 3 + col]
                     KeypadButton(
                         text = num,
-                        onClick = { onNumberClick(num) },
+                        onClick = {
+                            triggerVibration()
+                            onNumberClick(num)
+                        },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -166,11 +189,15 @@ fun SecureKeypad(
         ) {
             // Clear Button
             IconButton(
-                onClick = onClearClick,
+                onClick = {
+                    triggerVibration()
+                    onClearClick()
+                },
                 modifier = Modifier
                     .weight(1f)
                     .height(64.dp)
                     .clip(CircleShape)
+                    .testTag("keypad_btn_clear")
             ) {
                 Text(
                     text = "C",
@@ -184,17 +211,24 @@ fun SecureKeypad(
             val lastNum = numbers[9]
             KeypadButton(
                 text = lastNum,
-                onClick = { onNumberClick(lastNum) },
+                onClick = {
+                    triggerVibration()
+                    onNumberClick(lastNum)
+                },
                 modifier = Modifier.weight(1f)
             )
 
             // Delete Button
             IconButton(
-                onClick = onDeleteClick,
+                onClick = {
+                    triggerVibration()
+                    onDeleteClick()
+                },
                 modifier = Modifier
                     .weight(1f)
                     .height(64.dp)
                     .clip(CircleShape)
+                    .testTag("keypad_btn_delete")
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Backspace,
@@ -245,6 +279,7 @@ fun SecureAuthDialog(
     decoyModeType: String, // "NONE", "FAKE_CRASH"
     isDecoyModeActive: Boolean,
     isPinConfigured: Boolean = true,
+    vibrateOnKeyPress: Boolean = true,
     onVerify: (String) -> String, // Returns "SUCCESS_NORMAL", "SUCCESS_DECOY", "FAILED"
     onDismiss: () -> Unit,
     onSuccess: () -> Unit
@@ -334,7 +369,7 @@ fun SecureAuthDialog(
                     )
 
                     Text(
-                        text = if (isPinConfigured) "Enter privacy vault credentials" else "Default PIN is 1234. Set custom PIN in Settings.",
+                        text = if (isPinConfigured) "Enter privacy vault credentials" else "Default PIN is 123456. Set custom PIN in Settings.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (isPinConfigured) TextWarmGray else MaterialTheme.colorScheme.primary,
                         textAlign = TextAlign.Center
@@ -347,7 +382,7 @@ fun SecureAuthDialog(
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        for (i in 1..4) {
+                        for (i in 1..6) {
                             val active = pinBuffer.length >= i
                             val dotColor by animateColorAsState(
                                 targetValue = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
@@ -358,7 +393,7 @@ fun SecureAuthDialog(
                                     .size(16.dp)
                                     .clip(CircleShape)
                                     .background(dotColor)
-                            )
+                             )
                         }
                     }
 
@@ -379,12 +414,12 @@ fun SecureAuthDialog(
                 // Keypad Section
                 SecureKeypad(
                     onNumberClick = { num ->
-                        if (pinBuffer.length < 4) {
+                        if (pinBuffer.length < 6) {
                             errorMessage = null
                             pinBuffer += num
 
-                            // Auto verify on 4 digits
-                            if (pinBuffer.length == 4) {
+                            // Auto verify on 6 digits
+                            if (pinBuffer.length == 6) {
                                 when (onVerify(pinBuffer)) {
                                     "SUCCESS_NORMAL" -> {
                                         pinBuffer = ""
@@ -421,6 +456,7 @@ fun SecureAuthDialog(
                         errorMessage = null
                     },
                     randomizeLayout = randomizeKeypad,
+                    vibrateOnKeyPress = vibrateOnKeyPress,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
             }

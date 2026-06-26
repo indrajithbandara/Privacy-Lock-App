@@ -25,6 +25,8 @@ class AppAccessibilityService : AccessibilityService() {
         registerReceiver(screenOffReceiver, filter)
     }
 
+    private var lastActivePackage: String? = null
+
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             val packageName = event.packageName?.toString() ?: return
@@ -33,6 +35,15 @@ class AppAccessibilityService : AccessibilityService() {
             if (packageName == applicationContext.packageName) {
                 return
             }
+
+            val last = lastActivePackage
+            if (last != null && last != packageName) {
+                // If auto-lock is configured for Immediately (0 seconds), lock the previously active package
+                if (AppLockManager.getAutoLockTimeoutSeconds() == 0) {
+                    AppLockManager.lockPackage(last)
+                }
+            }
+            lastActivePackage = packageName
 
             // Verify if package is locked and has not been temporarily unlocked
             if (AppLockManager.isPackageLocked(packageName)) {

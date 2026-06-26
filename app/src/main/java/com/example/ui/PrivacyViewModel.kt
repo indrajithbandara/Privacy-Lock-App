@@ -232,6 +232,160 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
+     * Updates biometrics enabled preference.
+     */
+    fun setBiometricsEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            val current = repository.getConfigDirect()
+            repository.saveConfig(current.copy(biometricsEnabled = enabled))
+            val desc = if (enabled) "Biometric authentication activated." else "Biometric authentication deactivated."
+            repository.logEvent("CONFIG", desc)
+        }
+    }
+
+    /**
+     * Updates auto-lock timeout.
+     */
+    fun setAutoLockTimeoutSeconds(seconds: Int) {
+        viewModelScope.launch {
+            val current = repository.getConfigDirect()
+            repository.saveConfig(current.copy(autoLockTimeoutSeconds = seconds))
+            val label = when (seconds) {
+                0 -> "Immediately"
+                15 -> "15 seconds"
+                30 -> "30 seconds"
+                60 -> "1 minute"
+                300 -> "5 minutes"
+                600 -> "10 minutes"
+                else -> "Screen Off only"
+            }
+            repository.logEvent("CONFIG", "Auto lock timeout changed to $label.")
+        }
+    }
+
+    /**
+     * Updates vibrate on key press.
+     */
+    fun setVibrateOnKeyPress(enabled: Boolean) {
+        viewModelScope.launch {
+            val current = repository.getConfigDirect()
+            repository.saveConfig(current.copy(vibrateOnKeyPress = enabled))
+        }
+    }
+
+    /**
+     * Updates lock newly installed apps.
+     */
+    fun setLockNewlyInstalledApps(enabled: Boolean) {
+        viewModelScope.launch {
+            val current = repository.getConfigDirect()
+            repository.saveConfig(current.copy(lockNewlyInstalledApps = enabled, autoLockNewApps = enabled))
+            val desc = if (enabled) "Auto-lock for future newly installed apps activated." else "Auto-lock for newly installed apps deactivated."
+            repository.logEvent("CONFIG", desc)
+        }
+    }
+
+    /**
+     * Updates intruder detection.
+     */
+    fun setIntruderDetectionEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            val current = repository.getConfigDirect()
+            repository.saveConfig(current.copy(intruderDetectionEnabled = enabled))
+            val desc = if (enabled) "Intruder detection activated." else "Intruder detection deactivated."
+            repository.logEvent("CONFIG", desc)
+        }
+    }
+
+    /**
+     * Updates intruder selfie capture.
+     */
+    fun setIntruderSelfieEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            val current = repository.getConfigDirect()
+            repository.saveConfig(current.copy(intruderSelfieEnabled = enabled))
+            val desc = if (enabled) "Intruder avatar captures on failed entry enabled." else "Intruder avatar captures disabled."
+            repository.logEvent("CONFIG", desc)
+        }
+    }
+
+    /**
+     * Updates failed attempt limit.
+     */
+    fun setFailedAttemptLimit(limit: Int) {
+        viewModelScope.launch {
+            val current = repository.getConfigDirect()
+            repository.saveConfig(current.copy(failedAttemptLimit = limit))
+            repository.logEvent("CONFIG", "Failed PIN entry limit threshold set to $limit attempts.")
+        }
+    }
+
+    /**
+     * Setup a Panic PIN.
+     */
+    fun setupPanicPin(pin: String) {
+        viewModelScope.launch {
+            val hashed = SecurityUtils.hashPin(pin)
+            val current = repository.getConfigDirect()
+            repository.saveConfig(current.copy(hashedPanicPin = hashed))
+            repository.logEvent("CONFIG", "Panic security PIN configured.")
+        }
+    }
+
+    /**
+     * Serializes current SecurityConfig to a backup string format.
+     */
+    fun exportBackup(onExport: (String) -> Unit) {
+        viewModelScope.launch {
+            val config = repository.getConfigDirect()
+            val backup = "hashedPin:${config.hashedPin};hashedDecoyPin:${config.hashedDecoyPin};hashedPanicPin:${config.hashedPanicPin};biometricsEnabled:${config.biometricsEnabled};autoLockTimeoutSeconds:${config.autoLockTimeoutSeconds};randomizeKeypad:${config.randomizeKeypad};vibrateOnKeyPress:${config.vibrateOnKeyPress};lockNewlyInstalledApps:${config.lockNewlyInstalledApps};intruderDetectionEnabled:${config.intruderDetectionEnabled};intruderSelfieEnabled:${config.intruderSelfieEnabled};failedAttemptLimit:${config.failedAttemptLimit};screenshotProtection:${config.screenshotProtection};autoLockNewApps:${config.autoLockNewApps};decoyModeType:${config.decoyModeType};themeMode:${config.themeMode}"
+            onExport(backup)
+        }
+    }
+
+    /**
+     * Restores SecurityConfig from an exported backup string format.
+     */
+    fun restoreBackup(backupStr: String, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val parts = backupStr.split(";")
+                var config = repository.getConfigDirect()
+                for (part in parts) {
+                    val kv = part.split(":")
+                    if (kv.size == 2) {
+                        val key = kv[0]
+                        val value = kv[1]
+                        config = when (key) {
+                            "hashedPin" -> config.copy(hashedPin = value)
+                            "hashedDecoyPin" -> config.copy(hashedDecoyPin = value)
+                            "hashedPanicPin" -> config.copy(hashedPanicPin = value)
+                            "biometricsEnabled" -> config.copy(biometricsEnabled = value.toBoolean())
+                            "autoLockTimeoutSeconds" -> config.copy(autoLockTimeoutSeconds = value.toInt())
+                            "randomizeKeypad" -> config.copy(randomizeKeypad = value.toBoolean())
+                            "vibrateOnKeyPress" -> config.copy(vibrateOnKeyPress = value.toBoolean())
+                            "lockNewlyInstalledApps" -> config.copy(lockNewlyInstalledApps = value.toBoolean())
+                            "intruderDetectionEnabled" -> config.copy(intruderDetectionEnabled = value.toBoolean())
+                            "intruderSelfieEnabled" -> config.copy(intruderSelfieEnabled = value.toBoolean())
+                            "failedAttemptLimit" -> config.copy(failedAttemptLimit = value.toInt())
+                            "screenshotProtection" -> config.copy(screenshotProtection = value.toBoolean())
+                            "autoLockNewApps" -> config.copy(autoLockNewApps = value.toBoolean())
+                            "decoyModeType" -> config.copy(decoyModeType = value)
+                            "themeMode" -> config.copy(themeMode = value)
+                            else -> config
+                        }
+                    }
+                }
+                repository.saveConfig(config)
+                repository.logEvent("CONFIG", "Privacy space configurations restored successfully from local backup.")
+                onComplete(true)
+            } catch (e: Exception) {
+                onComplete(false)
+            }
+        }
+    }
+
+    /**
      * Updates theme mode.
      */
     fun setThemeMode(mode: String) {
@@ -251,9 +405,9 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
     fun verifyPin(pin: String): String {
         val config = securityConfig.value ?: return "FAILED"
         
-        // Secure Fallback: if master PIN is not configured yet, treat "1234" as the default PIN
+        // Secure Fallback: if master PIN is not configured yet, treat "123456" as the default PIN
         val targetPinHash = if (config.hashedPin.isEmpty()) {
-            SecurityUtils.hashPin("1234")
+            SecurityUtils.hashPin("123456")
         } else {
             config.hashedPin
         }
