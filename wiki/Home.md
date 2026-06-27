@@ -27,6 +27,7 @@ Privacy Lock is an offline-first Android security application built with modern 
 * **Project Governance**
   * [[Contributing]] — Guidelines for code, styles, and testing.
   * [[GitHub Workflow]] — Branch management, CI/CD, and release actions.
+  * [[Project Board]] — Kanban agile pipeline, custom fields, and task specifications.
   * [[Release Process]] — How updates are packaged and published.
   * [[Changelog]] — Release history and design iteration notes.
   * [[Roadmap]] — Development goals and planned improvements.
