@@ -1,28 +1,35 @@
-# GitHub Projects v2 Blueprint: Privacy Lock App
+# GitHub Project v2 Blueprint: Privacy Lock App Roadmap
 
-This document serves as the complete, actionable blueprint for setting up and managing the official GitHub Project Board (Projects v2) for the **Privacy Lock** application. It is designed to emulate a professional, high-performing Android engineering team's agile workflow.
+This document provides a comprehensive, enterprise-grade specification for configuring the official **GitHub Project (Projects v2)** board for the **Privacy Lock** Android application. It acts as the team's operational manual, defining pipelines, fields, labels, milestones, automations, and detailed task listings to guide developers and managers.
 
 ---
 
-## 📋 1. Project Board Schema
+## 📋 Project Configuration Metadata
 
-### Kanban Columns (Status)
-The project board utilizes a detailed pipeline to manage issues from inception to production verification:
+* **Project Name**: `Privacy Lock App Roadmap`
+* **Project Description**: *A complete roadmap and project management board for the Privacy Lock Android application. This project tracks feature development, bug fixes, documentation, testing, security improvements, UI/UX enhancements, CI/CD, and release milestones.*
+* **Default View Layout**: `Board (Kanban)`
 
-| Column | Description |
-| :--- | :--- |
-| **Backlog** | Unprioritized, unscheduled feature ideas, user suggestions, and low-priority bug reports. |
-| **Planned** | Triaged and approved items scheduled for a specific upcoming milestone but not yet ready for development. |
-| **Ready** | Fully groomed tasks with precise technical specifications, ready to be assigned and pulled by developers. |
-| **In Progress** | Active development is underway. A branch has been created and code is being written. |
-| **In Review** | Development is complete. A Pull Request is open, undergoing peer reviews and CI checks. |
-| **Testing** | PR is merged into `develop`. Changes are undergoing automated unit/screenshot checks and manual QA builds. |
-| **Release Ready** | Approved features and hotfixes compiled into a release candidate, awaiting final signing and distribution. |
-| **Released** | The release candidate is pushed to production (GitHub Releases, Play Store, or F-Droid). |
-| **Done** | Issues are closed, verified, and retrofitted. No further action is required. |
+---
 
-### Custom Fields Configuration
-To categorize, track, and measure progress, set up the following custom fields in your GitHub Project v2:
+## 🗂️ 1. Kanban Status Columns
+
+The project lifecycle is managed across six primary columns, guiding issues and pull requests from raw concepts to production delivery:
+
+| Column Header | Icon | Definition & Entrance Criteria |
+| :--- | :---: | :--- |
+| **📋 Backlog** | `📋` | Raw ideas, feature proposals, non-blocking enhancement requests, and low-priority improvements. |
+| **📝 Planned** | `📝` | Triaged and approved issues. Technically scoped, assigned to a milestone, and awaiting active development. |
+| **🚧 In Progress**| `🚧` | Features currently under development, active bug fixes, or documentation updates. Branch created. |
+| **👀 In Review**  | `👀` | Work completed. Associated Pull Request is open, undergoing code review, QA checks, or CI testing. |
+| **✅ Done**       | `✅` | Fully merged Pull Requests, completed documentation, or closed issues that have been verified on-device. |
+| **🚀 Released**   | `🚀` | Features included in an official production release (GitHub Tag/Release, Play Store, or F-Droid). |
+
+---
+
+## ⚙️ 2. Custom Fields Specification
+
+To allow advanced sorting, filtering, and status charting, set up the following custom attribute fields inside your GitHub Project:
 
 ```yaml
 fields:
@@ -31,46 +38,44 @@ fields:
     options:
       - label: "🔴 Critical"
         color: "red"
-        description: "Blocks core security mechanics or causes application crash."
+        description: "Showstopping issues (e.g. security bypass, data corruption, or runtime crashes)."
       - label: "🟠 High"
         color: "orange"
-        description: "Major feature or critical UX improvement."
+        description: "Main feature requirements, major security hardening, or high-severity bug fixes."
       - label: "🟡 Medium"
         color: "yellow"
-        description: "Standard features, enhancements, or internal improvements."
+        description: "Standard enhancements, UI polishes, secondary feature items, or general optimizations."
       - label: "🟢 Low"
         color: "green"
-        description: "Minor visual adjustments, non-urgent refactoring, or trivial docs."
+        description: "Minor visual adjustments, non-urgent refactoring, or trivial documentation updates."
 
   - name: "Complexity"
     type: "Single select"
     options:
       - label: "S (1-2 pts)"
         color: "blue"
-        description: "Simple changes, small text edits, or minor styling tweaks."
+        description: "Trivial effort (e.g. text edits, configuration flags, simple assets replacement)."
       - label: "M (3-5 pts)"
         color: "cyan"
-        description: "Standard UI screens, localized component refactoring, database migrations."
+        description: "Standard effort (e.g. single Compose screen, simple DB entity addition, local logic checks)."
       - label: "L (8-13 pts)"
         color: "purple"
-        description: "Major background services, cryptographic components, complex Compose states."
+        description: "Significant effort (e.g. background work manager routines, custom Accessibility loops)."
       - label: "XL (20+ pts)"
         color: "magenta"
-        description: "Multi-module architecture, complete system rewrites, system overlays."
+        description: "Complex system changes (e.g. cryptographic key-wrapping, complete module rewrites)."
 
   - name: "Category"
     type: "Single select"
     options:
-      - "Architecture"
-      - "Security"
-      - "Features"
+      - "Core Interception"
+      - "Security Shield"
+      - "User Experience"
       - "Performance"
-      - "UI / UX"
-      - "Testing"
       - "Documentation"
-      - "Open Source"
+      - "CI/CD & DevOps"
+      - "Open Source Governance"
       - "Distribution"
-      - "CI/CD"
 
   - name: "Platform"
     type: "Single select"
@@ -79,352 +84,390 @@ fields:
       - "Jetpack Compose"
       - "SQLite / Room"
       - "GitHub Actions"
-      - "Repository Metadata"
+      - "Metadata & Docs"
 
   - name: "Progress %"
     type: "Number"
     min: 0
     max: 100
 
-  - name: "Target Release"
+  - name: "Version"
     type: "Single select"
     options:
-      - "v1.0.0 (Launch)"
-      - "v1.1.0 (Biometrics & Alerts)"
-      - "v1.2.0 (Schedules & Patterns)"
-      - "v2.0.0 (Profiles & Wrapping)"
+      - "v0.9 Beta"
+      - "v1.0 Stable"
+      - "v1.1 Improvements"
+      - "v2.0 Major Release"
 ```
 
 ---
 
-## 🏷️ 2. Labeling Strategy
+## 🏷️ 3. Standard Repository Labels
 
-Use these standard repository labels to categorize issue and pull request cards:
+Configure these labels within your repository (`Settings -> Labels`) to categorize issues and PRs visually:
 
-| Label | Color | Description |
-| :--- | :--- | :--- |
-| `bug` | `#d73a4a` | Something is broken or not functioning correctly. |
-| `feature` | `#a2eeef` | New feature requests or visual enhancements. |
-| `enhancement` | `#3c82f6` | Polishing existing features, visuals, or code structure. |
-| `security` | `#000000` | Security-related implementations, encryption, or vulnerability fixes. |
-| `performance` | `#e9967a` | Optimizations targeting RAM, battery, startup, or DB queries. |
-| `documentation` | `#0075ca` | Modifications to Markdown documentation, wiki pages, or comments. |
-| `good first issue` | `#7057ff` | Trivial entry points suitable for external contributors. |
-| `help wanted` | `#008672` | Complex challenges requiring community assistance or discussion. |
-| `android` | `#3ddc84` | Android OS configurations, framework interfaces, or Gradle rules. |
-| `compose` | `#4285f4` | Jetpack Compose UI layout, state, or styling code. |
-| `backend` | `#673ab7` | Repository architecture, database layers, and core logic. |
-
----
-
-## ⚙️ 3. Project Automation Workflows
-
-We leverage GitHub Projects v2 native workflows combined with custom GitHub Action events to automate status changes:
-
-### Built-In Project Workflows
-Configure the following rules directly within the **Workflows** settings panel of your GitHub Project:
-
-1. **Auto-Assign to "In Progress"**:
-   * **Trigger**: Item assigned to a user or branch created.
-   * **Action**: Move card from `Ready` to `In Progress`.
-2. **Auto-Review Flow**:
-   * **Trigger**: Pull Request opened.
-   * **Action**: Move associated issue card from `In Progress` to `In Review`.
-3. **Draft Pull Request Protection**:
-   * **Trigger**: Draft PR opened.
-   * **Action**: Keep card in `In Progress` but append review pending label.
-4. **CI Testing Pipeline**:
-   * **Trigger**: PR review approved and checks pass.
-   * **Action**: Move card from `In Review` to `Testing`.
-5. **Closed Resolution**:
-   * **Trigger**: Issue closed.
-   * **Action**: Move card to `Done`.
-
-### GitHub Actions Automations
-You can also run GitHub workflows to automatically adjust project custom fields when specific events occur. 
-
-Example YAML snippet to automate the move to "Released" on tag publication:
-
-```yaml
-name: Project Automation - Release Sync
-
-on:
-  release:
-    types: [published]
-
-jobs:
-  update_project:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Move Issues to Released
-        uses: actions/add-to-project@v0.5.0
-        with:
-          project-url: https://github.com/users/indrajithbandara/projects/1
-          github-token: ${{ secrets.PROJECT_AUTOMATION_PAT }}
-```
+| Label Name | Recommended Color | Description / Context |
+| :--- | :---: | :--- |
+| `feature` | `#a2eeef` | New feature implementations or enhancements. |
+| `bug` | `#d73a4a` | Code, configuration, or UI regression fixes. |
+| `documentation` | `#0075ca` | Markdown wiki updates, README changes, or code annotations. |
+| `enhancement` | `#3c82f6` | Polishing existing features, code refactoring, or layout improvements. |
+| `security` | `#000000` | Cryptographic mechanisms, biometric wrappers, or vulnerability fixes. |
+| `performance` | `#e9967a` | Optimizations targeting RAM, battery, thread blockages, or DB caches. |
+| `ui` | `#fef2c0` | User interface structure, Compose grids, button alignments, or colors. |
+| `ux` | `#bfdadc` | Interactive user journeys, gesture intercepts, visual feedback, or haptics. |
+| `testing` | `#0e8a16` | Automated unit tests, JVM screenshot validations, or QA test cases. |
+| `ci/cd` | `#fbca04` | GitHub Actions setups, Gradle configurations, or signing pipelines. |
+| `dependencies` | `#1d76db` | Dependabot alerts, build library upgrades, and compiler versions. |
+| `good first issue` | `#7057ff` | Trivial tasks perfect for community onboarding and beginners. |
+| `help wanted` | `#008672` | Complex architecture debates requiring extra brains or design reviews. |
+| `high priority` | `#ff5722` | Requires immediate prioritization or scheduling in the active sprint. |
+| `medium priority` | `#ffeb3b` | Scheduled for standard active development tracking. |
+| `low priority` | `#8bc34a` | Address when core tasks are finalized; backlog optimization candidates. |
 
 ---
 
-## 🗺️ 4. Roadmap & Milestones
+## 🎯 4. Milestones & Releases
 
-Our development cycle is structured into four sequential milestones:
+Development targets are divided into four main milestones:
 
 ```
 +-----------------------------------------------------------------------------------+
-| v1.0.0 (Launch)                                                                   |
-| - Core Interceptor (AppAccessibilityService)                                      |
-| - Dual Credentials (Primary & Decoy)                                              |
-| - Offline logs & Intruder Center                                                  |
+| 📦 Milestone: v0.9 Beta                                                           |
+| Target: Core app lock, accessibility intercept, keypad layout, & primary setup.   |
 +-----------------------------------------------------------------------------------+
                                          |
                                          v
 +-----------------------------------------------------------------------------------+
-| v1.1.0 (Biometrics & Alerts)                                                      |
-| - Biometric fallbacks using androidx.biometric                                     |
-| - Intruder Alert Badge Notifications on launch                                    |
-| - Android 15 Edge-to-Edge and 16 Preview Support                                  |
+| 📦 Milestone: v1.0 Stable                                                         |
+| Target: Screenshot masking, decoy login, local backups, & full CI/CD pipeline.     |
 +-----------------------------------------------------------------------------------+
                                          |
                                          v
 +-----------------------------------------------------------------------------------+
-| v1.2.0 (Schedules & Patterns)                                                     |
-| - Customizable Lock Schedules via WorkManager                                      |
-| - 3x3 Gestural Pattern Screen (Jetpack Compose Canvas)                            |
-| - Advanced Database backups with local export/import                              |
+| 📦 Milestone: v1.1 Improvements                                                   |
+| Target: Biometric integration, battery optimizations, and Android 15 edge-to-edge. |
 +-----------------------------------------------------------------------------------+
                                          |
                                          v
 +-----------------------------------------------------------------------------------+
-| v2.0.0 (Profiles & Wrapping)                                                      |
-| - Multi-Profile Decoy Sandboxing (Hiding app lists based on PIN)                  |
-| - SQLite Encryption via SQLCipher                                                 |
-| - Keystore-backed AES/GCM Database Key Wrapping                                   |
+| 📦 Milestone: v2.0 Major Release                                                 |
+| Target: AES database encryption, pattern locker overlays, and cloud backups.     |
 +-----------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 📂 5. Realistic Task Directory
+## 🤖 5. Automation Rules & Workflows
 
-Below is the complete, high-fidelity backlog of task specifications representing real-world efforts. This can be directly imported into GitHub issues or project draft cards.
+To reduce project management overhead, enable the following **GitHub Project v2 Native Workflows** in the board's setup panel:
 
-### 📐 Category: Architecture
+1. **Auto-Assign to "🚧 In Progress"**:
+   * **Trigger**: When an issue is linked to a branch or assigned to a team member.
+   * **Action**: Move associated item status to `🚧 In Progress`.
+2. **Move to "👀 In Review"**:
+   * **Trigger**: When a Pull Request referencing an issue is opened.
+   * **Action**: Automatically move the issue card to `👀 In Review`.
+3. **Move to "Testing"**:
+   * **Trigger**: Automated checkouts and unit test suite successfully pass in GitHub Actions.
+   * **Action**: Append `Verified-CI` check label and queue for final evaluation.
+4. **Move to "🚀 Released"**:
+   * **Trigger**: A new production git tag/release is published on GitHub.
+   * **Action**: Move all linked closed issue cards to `🚀 Released`.
+5. **Move to "✅ Done"**:
+   * **Trigger**: When an issue is closed directly or a pull request is merged.
+   * **Action**: Move the card directly to `✅ Done`.
 
-#### TASK-ARCH-01: Establish Room Offline-First Database Structure
-* **Technical Description**: Implement database singletons with Kotlin Symbol Processing (KSP). Define schemas for `LockedApp`, `SecurityConfig`, `IntruderSelfie`, and `TimelineEvent` with safe migration setups.
+---
+
+## 🗂️ 6. Task Backlog Directory (The 26 Project Items)
+
+Below is the complete, high-fidelity directory of **26 realistic tasks** representing real-world efforts for an Android security application. Copy and paste these specifications to populate issues or card drafts:
+
+---
+
+### 🧱 Section A: Core Application Features
+
+#### 1. Core App Lock Interceptor
+* **Description**: Implement package transition detection within `AppAccessibilityService` by observing system `TYPE_WINDOW_STATE_CHANGED` broadcasts. Route intercepted launches to the secure blocker.
 * **Metadata**:
+  * **Status**: `🚧 In Progress`
   * **Priority**: 🔴 Critical
+  * **Milestone**: `v0.9 Beta`
+  * **Labels**: `feature`, `security`, `android`
   * **Complexity**: L (8-13 pts)
-  * **Platform**: SQLite / Room
-  * **Target Release**: `v1.0.0 (Launch)`
+  * **Category**: Core Interception
 
-#### TASK-ARCH-02: Implement Flow-based Presentation State Synchronization
-* **Technical Description**: Refactor UI observers to utilize `StateFlow` and Compose `collectAsStateWithLifecycle` to avoid lifecycle leaks during configuration changes or background context switches.
+#### 2. Biometric Authentication Integration
+* **Description**: Integrate `androidx.biometric:biometric-ktx`. Display hardware authentication prompt (fingerprint or face unlock) as a primary or fallback verification option in `LockActivity`.
 * **Metadata**:
+  * **Status**: `📝 Planned`
   * **Priority**: 🟠 High
+  * **Milestone**: `v1.1 Improvements`
+  * **Labels**: `feature`, `security`, `ui`
   * **Complexity**: M (3-5 pts)
-  * **Platform**: Jetpack Compose
-  * **Target Release**: `v1.0.0 (Launch)`
+  * **Category**: Security Shield
 
-#### TASK-ARCH-03: Decouple Business Logic into Repository & AppLockManager
-* **Technical Description**: Extract direct database query statements from `AppAccessibilityService` and `LockActivity`. Route all reads/writes through a thread-safe repository singleton and a centralized session manager.
+#### 3. 6-Digit PIN Security Mechanics
+* **Description**: Build a robust, 6-digit numeric input passcode setup and verification sequence. Hash credentials securely using SHA-256 with a randomized salt before storing in local Room database.
 * **Metadata**:
-  * **Priority**: 🟠 High
-  * **Complexity**: M (3-5 pts)
-  * **Platform**: Android SDK
-  * **Target Release**: `v1.0.0 (Launch)`
-
----
-
-### 🛡️ Category: Security
-
-#### TASK-SEC-01: Biometric Fallback Authentication Flow
-* **Technical Description**: Integrate `androidx.biometric:biometric-ktx`. Allow users to toggle biometric access in settings. Display system biometric prompt with fallback to Master PIN when app launch is intercepted.
-* **Metadata**:
+  * **Status**: `🚧 In Progress`
   * **Priority**: 🔴 Critical
-  * **Complexity**: L (8-13 pts)
-  * **Platform**: Android SDK
-  * **Target Release**: `v1.1.0 (Biometrics & Alerts)`
-
-#### TASK-SEC-02: Scrambled Keypad Shuffling Mechanics
-* **Technical Description**: Implement random keypad layout shuffling. Numbers $1$-$9$ are randomized on every display event using `java.security.SecureRandom`. Keep $0$, `Clear`, and `Backspace` locked in their standard design positions.
-* **Metadata**:
-  * **Priority**: 🟠 High
+  * **Milestone**: `v0.9 Beta`
+  * **Labels**: `feature`, `security`, `backend`
   * **Complexity**: M (3-5 pts)
-  * **Platform**: Jetpack Compose
-  * **Target Release**: `v1.0.0 (Launch)`
+  * **Category**: Security Shield
 
-#### TASK-SEC-03: Implement Hardware-Backed Keystore Database Wrapping
-* **Technical Description**: Integrate SQLCipher support for the Room database. Wrap/unwrap the database encryption key securely using AES/GCM keys stored inside the hardware-backed Android Keystore system.
+#### 4. Random PIN Keypad Grid Layout
+* **Description**: Build a custom Jetpack Compose keypad widget that randomizes the display locations of digits $1$-$9$ on every launch event to block shoulder-surfing and fingerprint smudge pattern profiling.
 * **Metadata**:
+  * **Status**: `🚧 In Progress`
+  * **Priority**: 🟠 High
+  * **Milestone**: `v0.9 Beta`
+  * **Labels**: `feature`, `security`, `ui`
+  * **Complexity**: M (3-5 pts)
+  * **Category**: Security Shield
+
+#### 5. Screenshot Protection (`FLAG_SECURE`)
+* **Description**: Apply `WindowManager.LayoutParams.FLAG_SECURE` layout flags dynamic controls to `LockActivity` and settings screens to block screen captures, recorders, and task preview exposures in Recents view.
+* **Metadata**:
+  * **Status**: `🚧 In Progress`
+  * **Priority**: 🟠 High
+  * **Milestone**: `v1.0 Stable`
+  * **Labels**: `feature`, `security`, `ux`
+  * **Complexity**: S (1-2 pts)
+  * **Category**: Security Shield
+
+#### 6. Auto Lock Timeout Engine
+* **Description**: Design an ephemeral in-memory cache timer to bypass locking recently validated packages within configurable grace periods (e.g. Immediately, 15 seconds, 1 minute, 5 minutes).
+* **Metadata**:
+  * **Status**: `🚧 In Progress`
+  * **Priority**: 🟠 High
+  * **Milestone**: `v0.9 Beta`
+  * **Labels**: `feature`, `ux`, `backend`
+  * **Complexity**: M (3-5 pts)
+  * **Category**: Core Interception
+
+#### 7. Intruder Visual Incident Center
+* **Description**: Log failed PIN entry timestamps and target application properties. On successful login, check for logged incidents, trigger a warning badge, and display a timeline with distinct vector silhouettes.
+* **Metadata**:
+  * **Status**: `🚧 In Progress`
+  * **Priority**: 🟡 Medium
+  * **Milestone**: `v1.0 Stable`
+  * **Labels**: `feature`, `security`, `ui`
+  * **Complexity**: L (8-13 pts)
+  * **Category**: Security Shield
+
+#### 8. Decoy PIN (Plausible Deniability)
+* **Description**: Add secondary "Decoy PIN" configuration database entries. If input on lock overlays, successfully authenticate but render a mock crash dialog or restricted fake dashboard statistics view.
+* **Metadata**:
+  * **Status**: `📝 Planned`
+  * **Priority**: 🟠 High
+  * **Milestone**: `v1.0 Stable`
+  * **Labels**: `feature`, `security`, `ux`
+  * **Complexity**: L (8-13 pts)
+  * **Category**: Security Shield
+
+#### 9. Portable Backup & Restore Engine
+* **Description**: Build a secure, local text-based backup parser. Compile configured application lists and hashed credentials into encrypted text strings that can be safely exported/imported locally.
+* **Metadata**:
+  * **Status**: `🚧 In Progress`
+  * **Priority**: 🟡 Medium
+  * **Milestone**: `v1.0 Stable`
+  * **Labels**: `feature`, `backend`, `security`
+  * **Complexity**: M (3-5 pts)
+  * **Category**: Security Shield
+
+---
+
+### ⚡ Section B: System & Platform Hardening
+
+#### 10. Accessibility Service Reliability Refactoring
+* **Description**: Optimize window event dispatching in `AppAccessibilityService`. Prevent main UI thread blocks and ensure rapid, stutter-free package interception on all major Android custom OEM skins.
+* **Metadata**:
+  * **Status**: `🚧 In Progress`
   * **Priority**: 🔴 Critical
-  * **Complexity**: XL (20+ pts)
-  * **Platform**: SQLite / Room
-  * **Target Release**: `v2.0.0 (Profiles & Wrapping)`
-
-#### TASK-SEC-04: Secure Window Flag Administration
-* **Technical Description**: Configure window layouts to dynamically apply `WindowManager.LayoutParams.FLAG_SECURE` based on database configuration. Block screenshot hooks, recorders, and task preview recents cache.
-* **Metadata**:
-  * **Priority**: 🟠 High
-  * **Complexity**: S (1-2 pts)
-  * **Platform**: Android SDK
-  * **Target Release**: `v1.0.0 (Launch)`
-
----
-
-### 🚀 Category: Features
-
-#### TASK-FEAT-01: Lock Interceptor Schedules Engine
-* **Technical Description**: Design a background scheduler utilizing Android `WorkManager` and `AlarmManager`. Support configuring custom weekly time windows during which target applications are automatically locked or bypassed.
-* **Metadata**:
-  * **Priority**: 🟡 Medium
+  * **Milestone**: `v0.9 Beta`
+  * **Labels**: `enhancement`, `performance`, `android`
   * **Complexity**: L (8-13 pts)
-  * **Platform**: Android SDK
-  * **Target Release**: `v1.2.0 (Schedules & Patterns)`
+  * **Category**: Core Interception
 
-#### TASK-FEAT-02: Multi-Profile Decoy Sandboxing Interface
-* **Technical Description**: Enable support for multiple Decoy PINs. Depending on which Decoy PIN is typed, completely filter and display a matching sandboxed application listing on the Dashboard to avoid social suspicion.
+#### 11. Battery Optimization Audits
+* **Description**: Ensure Accessibility loops consume less than 1% battery over a 12-hour background cycle. Leverage CPU profiling tools and dynamic in-memory caching to eliminate redundant database queries.
 * **Metadata**:
-  * **Priority**: 🟡 Medium
-  * **Complexity**: L (8-13 pts)
-  * **Platform**: Android SDK
-  * **Target Release**: `v2.0.0 (Profiles & Wrapping)`
-
-#### TASK-FEAT-03: Intruder Snapshot Recovery Setup
-* **Technical Description**: When a PIN attempt fails 3 times, utilize the camera permission to capture a localized snapshot in the background. Store the image locally inside the app's protected file system and log a timeline event.
-* **Metadata**:
+  * **Status**: `📝 Planned`
   * **Priority**: 🟠 High
-  * **Complexity**: L (8-13 pts)
-  * **Platform**: Android SDK
-  * **Target Release**: `v1.1.0 (Biometrics & Alerts)`
-
-#### TASK-FEAT-04: Panic PIN Quick Escape Action
-* **Technical Description**: Create a dedicated "Panic PIN". When typed on the secure overlay keypad, immediately terminate all background activities, clear the unlock cache, and force route the user back to the system Home Screen launcher.
-* **Metadata**:
-  * **Priority**: 🟠 High
+  * **Milestone**: `v1.1 Improvements`
+  * **Labels**: `performance`, `testing`, `android`
   * **Complexity**: M (3-5 pts)
-  * **Platform**: Android SDK
-  * **Target Release**: `v1.1.0 (Biometrics & Alerts)`
+  * **Category**: Performance
+
+#### 12. App Launch Interceptor Performance Tuning
+* **Description**: Implement thread-safe in-memory collections inside `AppLockManager` to load protected packages on start, bypassing disk access overhead during critical window-switching events.
+* **Metadata**:
+  * **Status**: `🚧 In Progress`
+  * **Priority**: 🟠 High
+  * **Milestone**: `v0.9 Beta`
+  * **Labels**: `performance`, `enhancement`, `backend`
+  * **Complexity**: M (3-5 pts)
+  * **Category**: Performance
+
+#### 13. System Notification Customization
+* **Description**: Design clean, low-profile notification channels to alert users on persistent active background service statuses or successful system security sweeps, conforming to Android 14 notification rules.
+* **Metadata**:
+  * **Status**: `📝 Planned`
+  * **Priority**: 🟡 Medium
+  * **Milestone**: `v1.1 Improvements`
+  * **Labels**: `feature`, `ui`, `android`
+  * **Complexity**: S (1-2 pts)
+  * **Category**: User Experience
 
 ---
 
-### ⚡ Category: Performance
+### 🎨 Section C: UI/UX & Design
 
-#### TASK-PERF-01: Accessibility Event Parsing Optimization
-* **Technical Description**: Benchmark and refactor accessibility interceptor callbacks. Reduce object allocation and avoid thread blockages inside the main loop of `onAccessibilityEvent` to maintain target system responsiveness.
+#### 14. Material 3 UI Design Polish
+* **Description**: Standardize custom color themes inside `Theme.kt` using a secure color scheme palette (Sage Green, Forest Accent). Implement responsive Material 3 layout components with beautiful fluid ripples.
 * **Metadata**:
+  * **Status**: `🚧 In Progress`
   * **Priority**: 🟠 High
-  * **Complexity**: M (3-5 pts)
-  * **Platform**: Android SDK
-  * **Target Release**: `v1.0.0 (Launch)`
-
-#### TASK-PERF-02: Database Query Caching Architecture
-* **Technical Description**: Store locked package lists inside an in-memory thread-safe state cache within `AppLockManager` to avoid querying Room database SQLite files on every system window state change.
-* **Metadata**:
-  * **Priority**: 🟠 High
+  * **Milestone**: `v0.9 Beta`
+  * **Labels**: `enhancement`, `ui`, `ux`
   * **Complexity**: S (1-2 pts)
-  * **Platform**: SQLite / Room
-  * **Target Release**: `v1.0.0 (Launch)`
+  * **Category**: User Experience
 
-#### TASK-PERF-03: Benchmark Battery Usage Under Long Intercept Operations
-* **Technical Description**: Conduct profiles using Android Profiler over 12-hour background cycles. Ensure accessibility state change evaluations use less than 1% of the system battery footprint.
+#### 15. Settings Redesign & Layout Structuring
+* **Description**: Refactor settings into separate intuitive cards (Security Options, General Customization, Advanced Actions). Ensure touch target sizing meets accessibility guidelines (minimum 48dp).
 * **Metadata**:
+  * **Status**: `🚧 In Progress`
   * **Priority**: 🟡 Medium
+  * **Milestone**: `v0.9 Beta`
+  * **Labels**: `enhancement`, `ui`, `ux`
   * **Complexity**: S (1-2 pts)
-  * **Platform**: Android SDK
-  * **Target Release**: `v1.2.0 (Schedules & Patterns)`
+  * **Category**: User Experience
 
 ---
 
-### 🎨 Category: UI / UX
+### 🧪 Section D: Validation, Quality & QA
 
-#### TASK-UI-01: Standardize Material 3 Theme & Sage Palette
-* **Technical Description**: Build a centralized M3 color scheme utilizing Sage (primary), Forest (secondary), and Olive (tertiary) custom accent mappings. Handle smooth background and surface transitions in dark/light variations.
+#### 16. Unit & Screenshot Automated Testing Suite
+* **Description**: Implement JVM Robolectric and Roborazzi visual verification checks inside `app/src/test/`. Ensure overlay layouts, keypad items, and home routing states are robust to modifications.
 * **Metadata**:
+  * **Status**: `🚧 In Progress`
   * **Priority**: 🟠 High
-  * **Complexity**: S (1-2 pts)
-  * **Platform**: Jetpack Compose
-  * **Target Release**: `v1.0.0 (Launch)`
-
-#### TASK-UI-02: Keypad Numeric Press Visual Ripple Effect
-* **Technical Description**: Standardize button size to at least 72dp to satisfy accessibility touch target scales. Build soft tactile container shapes using Compose Canvas and customize state-based Material 3 click ripples.
-* **Metadata**:
-  * **Priority**: 🟡 Medium
-  * **Complexity**: S (1-2 pts)
-  * **Platform**: Jetpack Compose
-  * **Target Release**: `v1.0.0 (Launch)`
-
-#### TASK-UI-03: Onboarding On-Device Interactive Simulator
-* **Technical Description**: Create an interactive phone preview simulation on the Dashboard screen. Help users visually practice toggling locks, inputting decoy PINs, and understanding the background overlay flow on-screen.
-* **Metadata**:
-  * **Priority**: 🟡 Medium
+  * **Milestone**: `v1.0 Stable`
+  * **Labels**: `testing`, `ci/cd`
   * **Complexity**: M (3-5 pts)
-  * **Platform**: Jetpack Compose
-  * **Target Release**: `v1.0.0 (Launch)`
+  * **Category**: Security Shield
+
+#### 17. Target Compatibility Testing & Verification
+* **Description**: Conduct manual and automated verification tests against Android 15 edge-to-edge constraints and Android 16 developer preview branches. Confirm overlay views display properly without visual overlap.
+* **Metadata**:
+  * **Status**: `📝 Planned`
+  * **Priority**: 🟡 Medium
+  * **Milestone**: `v1.1 Improvements`
+  * **Labels**: `testing`, `android`
+  * **Complexity**: M (3-5 pts)
+  * **Category**: Security Shield
 
 ---
 
-### 🧪 Category: Testing
+### 📖 Section E: Project Documentation
 
-#### TASK-TEST-01: Compose UI Screenshot Testing Integration
-* **Technical Description**: Configure Roborazzi inside `app/build.gradle.kts` and setup JVM screenshot verification routines for `DashboardScreen`, `PrivacyCenterScreen`, and `LockActivity` secure keypads.
+#### 18. Structured GitHub Wiki Setup
+* **Description**: Formulate a complete, interconnected offline-first Markdown wiki documentation suite capturing installation rules, database schema flowcharts, lock overlay lifecycles, and security properties.
 * **Metadata**:
+  * **Status**: `🚧 In Progress`
   * **Priority**: 🟠 High
+  * **Milestone**: `v0.9 Beta`
+  * **Labels**: `documentation`
   * **Complexity**: M (3-5 pts)
-  * **Platform**: Jetpack Compose
-  * **Target Release**: `v1.0.0 (Launch)`
+  * **Category**: Documentation
 
-#### TASK-TEST-02: Robolectric Critical User Journey Verification
-* **Technical Description**: Write unit tests verifying that launching locked apps, inserting incorrect PIN codes, inputting standard PINs, or using decoy keys correctly transition AppLockManager state hashes.
+#### 19. README Enhancement
+* **Description**: Overhaul the repository root `README.md` to introduce a high-contrast hero banner, clear feature outlines, detailed architecture hierarchy trees, and quick setup developer workflows.
 * **Metadata**:
-  * **Priority**: 🟠 High
-  * **Complexity**: M (3-5 pts)
-  * **Platform**: Android SDK
-  * **Target Release**: `v1.0.0 (Launch)`
-
-#### TASK-TEST-03: Verify Compatibility with Android 15 & 16 Previews
-* **Technical Description**: Set up a virtual device utilizing Android 15 and 16 developer preview SDK targets. Validate that the accessibility window transition callbacks do not fail under updated edge-to-edge constraints.
-* **Metadata**:
+  * **Status**: `🚧 In Progress`
   * **Priority**: 🟡 Medium
-  * **Complexity**: M (3-5 pts)
-  * **Platform**: Android SDK
-  * **Target Release**: `v1.1.0 (Biometrics & Alerts)`
+  * **Milestone**: `v0.9 Beta`
+  * **Labels**: `documentation`, `good first issue`
+  * **Complexity**: S (1-2 pts)
+  * **Category**: Documentation
+
+#### 20. Contributing Guide Setup (`CONTRIBUTING.md`)
+* **Description**: Write code style requirements, issue filing instructions, branching protocols, pull request rules, and test verification standards to facilitate developer contribution.
+* **Metadata**:
+  * **Status**: `🚧 In Progress`
+  * **Priority**: 🟡 Medium
+  * **Milestone**: `v0.9 Beta`
+  * **Labels**: `documentation`, `good first issue`
+  * **Complexity**: S (1-2 pts)
+  * **Category**: Open Source Governance
+
+#### 21. Pull Request Standardized Templates
+* **Description**: Create `.github/PULL_REQUEST_TEMPLATE.md` with structured checklists covering issue references, changes list, testing evidence, code style compliance, and screenshots.
+* **Metadata**:
+  * **Status**: `🚧 In Progress`
+  * **Priority**: 🟢 Low
+  * **Milestone**: `v0.9 Beta`
+  * **Labels**: `documentation`, `open source`
+  * **Complexity**: S (1-2 pts)
+  * **Category**: Open Source Governance
+
+#### 22. Issue Tracking Templates
+* **Description**: Create Markdown config templates under `.github/ISSUE_TEMPLATE/` for Bug Reports, Feature Proposals, and Dependency Updates to pre-fill logs with system diagnostic tables.
+* **Metadata**:
+  * **Status**: `🚧 In Progress`
+  * **Priority**: 🟢 Low
+  * **Milestone**: `v0.9 Beta`
+  * **Labels**: `documentation`, `open source`
+  * **Complexity**: S (1-2 pts)
+  * **Category**: Open Source Governance
+
+#### 23. Security Policy Statement (`SECURITY.md`)
+* **Description**: Formulate a secure disclosure mechanism defining supported versions, coordinated response pathways, private communication handles, and patch dispatch speeds.
+* **Metadata**:
+  * **Status**: `🚧 In Progress`
+  * **Priority**: 🟠 High
+  * **Milestone**: `v0.9 Beta`
+  * **Labels**: `documentation`, `security`
+  * **Complexity**: S (1-2 pts)
+  * **Category**: Open Source Governance
 
 ---
 
-### 📦 Category: Distribution & DevOps
+### 📦 Section F: Delivery & Infrastructure
 
-#### TASK-DEVOPS-01: Setup GitHub Actions CI Building Infrastructure
-* **Technical Description**: Write a complete GitHub Actions workflow under `.github/workflows/main.yml`. Automate code checkouts, JDK setup, linter check runs, Robolectric JUnit testing, and compiled debug APK outputs.
+#### 24. GitHub Actions CI/CD Setup
+* **Description**: Write a continuous integration workflow (`.github/workflows/main.yml`) that checks out code, configures JDK 17, caches libraries, runs linter checks, tests JVM models, and builds APK binaries.
 * **Metadata**:
+  * **Status**: `🚧 In Progress`
   * **Priority**: 🟠 High
+  * **Milestone**: `v1.0 Stable`
+  * **Labels**: `ci/cd`, `dependencies`
   * **Complexity**: M (3-5 pts)
-  * **Platform**: GitHub Actions
-  * **Target Release**: `v1.0.0 (Launch)`
+  * **Category**: CI/CD & DevOps
 
-#### TASK-DEVOPS-02: Secure Signing Configuration Setup
-* **Technical Description**: Implement secure signing configs in `app/build.gradle.kts`. Use environment variables mapped to system actions to execute release signing checks without storing plain keys inside the public repository.
+#### 25. Play Store Release Strategy Planning
+* **Description**: Draft Google Play Console listings, organize assets (app screenshots, vector icons), write store copy descriptions, and set up test environments inside Google Play's closed testing track.
 * **Metadata**:
-  * **Priority**: 🟠 High
-  * **Complexity**: S (1-2 pts)
-  * **Platform**: GitHub Actions
-  * **Target Release**: `v1.0.0 (Launch)`
-
-#### TASK-DEVOPS-03: Formulate F-Droid Distribution Schema
-* **Technical Description**: Set up f-droid metadata files, app descriptions, and screenshot indexes matching official guidelines. Prepare the source tag repository structure for integration inside F-Droid's build metadata.
-* **Metadata**:
+  * **Status**: `📝 Planned`
   * **Priority**: 🟡 Medium
+  * **Milestone**: `v2.0 Major Release`
+  * **Labels**: `ci/cd`, `ui`, `ux`
+  * **Complexity**: M (3-5 pts)
+  * **Category**: Distribution
+
+#### 26. Version 1.0 Release Package Construction
+* **Description**: Compile and verify release builds. Prepare changelogs, build notes, and sign binaries using secure, non-committed signing configurations for F-Droid and GitHub Releases.
+* **Metadata**:
+  * **Status**: `📝 Planned`
+  * **Priority**: 🟠 High
+  * **Milestone**: `v1.0 Stable`
+  * **Labels**: `ci/cd`, `documentation`
   * **Complexity**: S (1-2 pts)
-  * **Platform**: Repository Metadata
-  * **Target Release**: `v1.1.0 (Biometrics & Alerts)`
+  * **Category**: Distribution
 
 ---
 
-## 🚀 6. Importing this Project to GitHub
-
-To quickly instantiate this configuration on GitHub:
-1. Go to your GitHub organization or profile, and select **Projects**.
-2. Click **New Project** and choose the **Board** layout (v2).
-3. Create custom fields as defined in **Section 1 (Project Board Schema)**.
-4. Set up the automation rules under **Workflows** to match **Section 3 (Project Automation Workflows)**.
-5. Create issues in your repository copying the technical descriptions and metadata from **Section 5 (Realistic Task Directory)**, and add them to your board.
+[[Home]] | [[Installation >>](Installation)]
