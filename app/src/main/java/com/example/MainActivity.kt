@@ -48,10 +48,11 @@ class MainActivity : ComponentActivity() {
             val viewModel: PrivacyViewModel = viewModel()
             val config by viewModel.securityConfig.collectAsStateWithLifecycle()
 
+            val isScreenshotProtected by viewModel.isScreenshotProtectionEnabled.collectAsStateWithLifecycle()
+
             // Dynamic screenshot protection shield
-            LaunchedEffect(config?.screenshotProtection) {
-                val shieldActive = config?.screenshotProtection == true
-                toggleScreenshotShield(shieldActive)
+            LaunchedEffect(isScreenshotProtected) {
+                toggleScreenshotShield(isScreenshotProtected)
             }
 
             // Centralized Theme state

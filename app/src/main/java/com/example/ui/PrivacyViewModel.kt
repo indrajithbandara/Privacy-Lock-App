@@ -1,9 +1,15 @@
 package com.example.ui
 
 import android.app.Application
+import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.AppDatabase
@@ -19,9 +25,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.security.SecureRandom
-import kotlinx.coroutines.launch
+
+private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "privacy_settings")
+private val SCREENSHOT_PROTECTION_KEY = booleanPreferencesKey("screenshot_protection")
 
 class PrivacyViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -45,12 +55,32 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
     // Temporary Unlock State
     var tempUnlockExpiryTime by mutableStateOf<Long?>(null)
 
+    // Screenshot Protection Live State Flow from DataStore (Default: true / ON)
+    val isScreenshotProtectionEnabled: StateFlow<Boolean> = application.applicationContext.dataStore.data
+        .map { preferences ->
+            preferences[SCREENSHOT_PROTECTION_KEY] ?: true
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     init {
         val db = AppDatabase.getDatabase(application)
         repository = PrivacyRepository(db)
 
         viewModelScope.launch {
             repository.prepopulateIfNeeded(application)
+            
+            // Sync DataStore preference with Room database SecurityConfig on launch
+            try {
+                val dataStoreEnabled = application.applicationContext.dataStore.data
+                    .map { preferences -> preferences[SCREENSHOT_PROTECTION_KEY] ?: true }
+                    .first()
+                val current = repository.getConfigDirect()
+                if (current.screenshotProtection != dataStoreEnabled) {
+                    repository.saveConfig(current.copy(screenshotProtection = dataStoreEnabled))
+                }
+            } catch (e: Exception) {
+                // Ignore
+            }
         }
     }
 
@@ -200,6 +230,10 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
      */
     fun setScreenshotProtection(enabled: Boolean, onUpdated: (Boolean) -> Unit) {
         viewModelScope.launch {
+            // Write to DataStore
+            getApplication<Application>().applicationContext.dataStore.edit { preferences ->
+                preferences[SCREENSHOT_PROTECTION_KEY] = enabled
+            }
             val current = repository.getConfigDirect()
             repository.saveConfig(current.copy(screenshotProtection = enabled))
             val desc = if (enabled) "Screenshot and screen-recording shield activated." else "Screenshot shield deactivated."

@@ -150,7 +150,7 @@ fun SecureKeypad(
     }
 
     val numbers = remember(randomizeLayout) {
-        val list = (0..9).map { it.toString() }.toMutableList()
+        val list = (1..9).map { it.toString() }.toMutableList()
         if (randomizeLayout) {
             list.shuffle()
         }
@@ -162,7 +162,7 @@ fun SecureKeypad(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Grid representing keypad
+        // Grid representing keypad (Digits 1-9)
         for (row in 0..2) {
             Row(
                 modifier = Modifier.fillMaxWidth(0.85f),
@@ -182,7 +182,7 @@ fun SecureKeypad(
             }
         }
 
-        // Bottom row (Clear, 0/last number, Delete)
+        // Bottom row (Clear, 0, Delete)
         Row(
             modifier = Modifier.fillMaxWidth(0.85f),
             horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally)
@@ -207,13 +207,12 @@ fun SecureKeypad(
                 )
             }
 
-            // Zero or remaining number
-            val lastNum = numbers[9]
+            // Zero is always in the center of the bottom row
             KeypadButton(
-                text = lastNum,
+                text = "0",
                 onClick = {
                     triggerVibration()
-                    onNumberClick(lastNum)
+                    onNumberClick("0")
                 },
                 modifier = Modifier.weight(1f)
             )

@@ -133,7 +133,7 @@ fun PrivacyCenterScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     // Recommendation 1: Screenshot Shield
-                    val screenshotShieldEnabled = config?.screenshotProtection == true
+                    val screenshotShieldEnabled by viewModel.isScreenshotProtectionEnabled.collectAsStateWithLifecycle()
                     RecommendationItem(
                         title = "Enable Screenshot Shield",
                         description = "Blocks other apps and processes from recording or screenshotting your safe space.",

@@ -378,7 +378,7 @@ fun SettingsScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // Screenshot Shield
-                    val screenshotEnabled = config?.screenshotProtection == true
+                    val screenshotEnabled by viewModel.isScreenshotProtectionEnabled.collectAsStateWithLifecycle()
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
