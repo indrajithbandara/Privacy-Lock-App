@@ -1,95 +1,169 @@
 # Privacy Lock
 
 [![Build Status](https://github.com/example/privacy-lock/workflows/Android%20CI/badge.svg)](https://github.com/example/privacy-lock/actions)
+[![Latest Release](https://img.shields.io/github/v/release/example/privacy-lock?label=Latest%20Release&color=green)](https://github.com/example/privacy-lock/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/example/privacy-lock/total?label=Downloads&color=blue)](https://github.com/example/privacy-lock/releases)
+[![Version](https://img.shields.io/github/v/release/example/privacy-lock?label=Version)](https://github.com/example/privacy-lock/releases)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Android_8.0+-green.svg)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.2.10-purple.svg)](https://kotlinlang.org)
 [![Compose](https://img.shields.io/badge/Jetpack_Compose-M3-blue.svg)](https://developer.android.com/jetpack/compose)
 
-Privacy Lock is a local-first application locker and privacy protection center for Android devices. Unlike standard application lockers that rely on network integration or display excessive advertisements, Privacy Lock is built as an offline-first system utility. It utilizes standard Android background services to intercept application launches and overlay a secure authentication screen, ensuring personal data remains isolated on-device.
+Privacy Lock is an offline-first, highly secure application locker and local privacy protection center for Android devices. Engineered strictly as a native system utility, Privacy Lock uses standard Android background services to intercept target application launches and display a secure numeric authentication overlay. This ensures your private application data remains isolated and protected on-device without relying on external network dependencies or displaying unsolicited advertisements.
 
 ---
 
-## 📸 Screenshots
+## 📦 Download
 
-| Onboarding & Permissions | Secure PIN Overlay | Security Timeline |
+⬇️ **[Download the latest APK from GitHub Releases](https://github.com/example/privacy-lock/releases)**.
+
+Every release package is fully compiled, signed, and includes all necessary assets for verification and installation. In every official release, you will find:
+
+*   **Latest Release**: The highly optimized production version of the app.
+*   **Download APK**: Direct installable package for modern Android devices (`.apk`).
+*   **Android App Bundle (AAB)**: The standard publishing package format (`.aab`).
+*   **Release Notes**: Comprehensive list of features, bug fixes, and details corresponding to the release.
+*   **SHA-256 Checksum**: Cryptographic checksum signature used to verify file integrity and protect against tampering.
+*   **Source Code**: Complete snapshot of the repository source code at the release tag (`.zip` / `.tar.gz`).
+
+---
+
+## 🚀 Installation & Setup
+
+Get Privacy Lock up and running on your Android device in five simple steps:
+
+1.  **Download the APK**: Visit the [GitHub Releases page](https://github.com/example/privacy-lock/releases) and download the latest `.apk` file to your device.
+2.  **Install the APK**: Open the downloaded file. If prompted, allow your browser or file manager to "Install apps from unknown sources".
+3.  **Enable Required Permissions**:
+    *   Launch Privacy Lock.
+    *   Authorize the **Accessibility Service** permission (required to detect target app launches and display the blocking overlay screen).
+    *   (Optional) Enable battery optimization exclusion under system settings to prevent Android from closing the background service.
+4.  **Configure PIN**:
+    *   Set up your secure **Master PIN** (6 digits) to secure your locked applications.
+    *   (Optional) Set up a separate **Decoy PIN** to protect you under shoulder-surfing or coercive conditions.
+5.  **Start Locking Applications**:
+    *   From the primary dashboard, browse the list of installed applications.
+    *   Toggle the secure lock switch on the apps you want to protect (e.g., Settings, Play Store, Messaging apps).
+
+---
+
+## 🏗️ Releases
+
+Every official version release is published under the [GitHub Releases Page](https://github.com/example/privacy-lock/releases). Every single release contains:
+
+*   **Optimized APK**: Production-ready compiled installer.
+*   **Android App Bundle (AAB)**: Standard distribution bundle.
+*   **Comprehensive Changelog**: Historical tracking of all adjustments, enhancements, and corrections.
+*   **SHA-256 Checksum**: Safe, verifiable cryptographic signatures of all compiled binaries.
+*   **Release Notes**: Summary of major feature changes, performance improvements, and contributor credits.
+
+---
+
+## 🏪 Distribution Platforms
+
+### 🤖 Google Play Store
+**Coming Soon on Google Play**
+
+<!-- [![Get it on Google Play](https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png)](https://play.google.com/store) -->
+
+### 🟢 F-Droid
+**Coming Soon on F-Droid**
+
+<!-- [![Get it on F-Droid](https://fdroid.gitlab.io/fdroid-website/badge/get-it-on.png)](https://f-droid.org) -->
+
+---
+
+## 🛡️ Security & Integrity Verification
+
+To guarantee that the APK you are installing has not been modified or tampered with, you should verify its integrity using its SHA-256 checksum.
+
+### How to Verify APK Integrity:
+1.  Download the `.apk` file and its corresponding `.sha256` checksum file (or locate the checksum in the GitHub Release details).
+2.  Open your terminal or command prompt and run the following command depending on your operating system:
+    *   **Linux**:
+        ```bash
+        sha256sum privacy-lock-release.apk
+        ```
+    *   **macOS**:
+        ```bash
+        shasum -a 256 privacy-lock-release.apk
+        ```
+    *   **Windows (PowerShell)**:
+        ```powershell
+        Get-FileHash privacy-lock-release.apk -Algorithm SHA256
+        ```
+3.  Compare the printed hash output with the official checksum published on the GitHub Releases page. If they match exactly, your installation file is authentic and safe to install.
+
+
+---
+
+## 📸 Screen Showcases
+
+| Onboarding & Permissions | Secure PIN Keypad | Privacy Timeline |
 | :---: | :---: | :---: |
-| ![Onboarding Screenshot Placeholder](assets/dashboard_screenshot.png) | ![PIN Overlay Screenshot Placeholder](assets/keypad_screenshot.png) | ![Timeline Screenshot Placeholder](assets/settings_screenshot.png) |
+| ![Onboarding](screenshots/home.png) | ![Keypad Overlay](screenshots/lock_screen.png) | ![Timeline logs](screenshots/security_center.png) |
 
-*(Reference images are located in the `/assets` directory. To refresh these files, capture live snapshots on a connected device or run local Roborazzi screenshot verification tasks.)*
-
----
-
-## 🔍 Why This Project Exists
-
-Mobile utility applications are frequently bundled with tracker SDKs, remote telemetry services, and unneeded network permissions that compromise user metadata. This project was initiated to create a fully transparent, local-first lock utility with three key design constraints:
-
-1. **Zero Network Dependencies**: The application does not request the `INTERNET` permission in its manifest, completely preventing remote data exfiltration.
-2. **Explicit Cloud Exclusion**: Local SQLite databases are flagged to bypass standard Android auto-backup rules, preventing credentials and event history from being uploaded to vendor cloud storage.
-3. **Frictionless Native Integration**: The UI is styled strictly around standard Material 3 design systems to look and behave like a native system component of the Android operating system.
+*(Visual asset walkthroughs, detailed wireframe specs, and capture guidelines can be found in the [Screenshots Directory](screenshots/README.md).)*
 
 ---
 
-## 🛠 Features
+## 🔍 Core Philosophy & Design Constraints
 
-Privacy Lock includes the following core functionalities, all implemented directly within the source tree:
+This utility is built with strict privacy and architectural boundaries:
 
-* **Background App Interception**: Uses a background Accessibility Service to detect when specified applications are brought to the foreground and displays a secure locking interface.
-* **Master & Decoy PIN Toggles**: Supports defining a standard security PIN alongside an alternative Decoy PIN. Both trigger system unlock, preventing physical coercion scenarios.
-* **On-Device Database Persistence**: Utilizes Room SQLite storage to record locked application configurations, settings states, secure timeline logs, and failed intrusion files.
-* **Intruder Logging with Generative Avatars**: Records failed PIN entries with masked characters (`****`) alongside randomly assigned visual identifier avatars to flag shoulder-surfing and entry attempts.
-* **Layout Randomization**: Features a dynamic keypad layout option that scrambles the numeric entry grid on every display event, mitigating finger-smudge analysis.
-* **Dynamic Window Protection**: Integrates standard window flags (`FLAG_SECURE`) to programmatically disable screenshots, system-recents caching, and screen recording on sensitive protection screens.
-* **Physical Device Scanning**: Leverages Android's `PackageManager` to scan and list physical applications installed on-device alongside default virtual demo listings.
-* **Material 3 UI**: Built with a custom M3 Sage Green color palette with responsive layouts adapting fluidly to compact (mobile) and expanded (tablet) screen sizes.
+1. **Zero Network Permissions**: The app declares no network configurations or internet permissions in its `AndroidManifest.xml`, ensuring your data never leaves your device.
+2. **Explicit Cloud Bypass**: Stored PIN hashes and local intrusion databases are explicitly flagged to bypass system-level cloud backups and ADB physical extraction cables via `backup_rules.xml` and `data_extraction_rules.xml`.
+3. **Native Material 3 Interface**: Styled using a customized Material 3 Sage Green color palette with responsive scaling to look and feel like a native part of the Android operating system.
+
+---
+
+## 🛠️ Features
+
+* **App Launch Interception**: A lightweight background accessibility service monitors foreground changes on-device to immediately display a blocking authentication keypad over target applications.
+* **Dual Secure Credentials**: Define a standard 6-digit **Master PIN** alongside an alternative **Decoy PIN**. Both pins successfully unlock the interface, but the Decoy PIN logs a standard decoy session to protect you from shoulder-surfing and coercion.
+* **Standard & Scrambled Keypads**: Features a customizable numeric PIN layout:
+  * **Standard Mode**: Digits 1–9 arranged sequentially, with `0` always centered in the bottom row, flanked by `Clear` on the left and `Backspace` on the right.
+  * **Randomized Keypad**: Shuffles digits 1–9 on every display event to prevent finger-smudge analysis and motion pattern logging, while keeping `0`, `Clear`, and `Backspace` securely in their standard bottom positions.
+* **Window Protection Shield**: Programmatically binds the standard Android `WindowManager.LayoutParams.FLAG_SECURE` window property to the secure overlay screen to disable screenshots, screen recorders, and task preview snapshots in the system Recents carousel.
+* **Local Intrusion Center**: Logs failed authentication attempts inside local encrypted SQLite files, displaying a chronological timeline with custom-generated visual avatars to protect against physical intruders.
+* **On-Device Package Syncing**: Integrates native Android `PackageManager` scans to automatically list physical apps installed on-device alongside default virtual listings.
 
 ---
 
 ## 📐 Architecture Overview
 
-The codebase is structured under clean Model-View-ViewModel (MVVM) patterns to ensure high separation of concerns:
+Privacy Lock is structured around clean, predictable Model-View-ViewModel (MVVM) patterns:
 
-```
-                  ┌───────────────────────────────┐
-                  │       Jetpack Compose UI      │
-                  │  (Dashboard, PrivacyCenter,   │
-                  │         LockActivity)         │
-                  └───────────────┬───────────────┘
-                                  │ observes StateFlow (collectAsStateWithLifecycle)
-                                  ▼
-                  ┌───────────────────────────────┐
-                  │       PrivacyViewModel        │
-                  │   (Coordinates presentation   │
-                  │       and screen states)      │
-                  └───────────────┬───────────────┘
-                                  │ invokes Repository operations
-                                  ▼
-                  ┌───────────────────────────────┐
-                  │       PrivacyRepository       │
-                  │   (Coordinates database and   │
-                  │     system package scans)     │
-                  └───────────────┬───────────────┘
-                                  │
-                 ┌────────────────┴────────────────┐
-                 ▼                                 ▼
-      ┌─────────────────────┐           ┌─────────────────────┐
-      │   Room Database     │           │    SecurityUtils    │
-      │  (SQLite DAOs &     │           │ (Salted SHA-256 and │
-      │   local Entities)   │           │  system permissions)│
-      └─────────────────────┘           └─────────────────────┘
+```mermaid
+graph TD
+    UI[Jetpack Compose UI<br>Dashboard, Settings, LockActivity]
+    VM[PrivacyViewModel<br>Coordinates Presentation States]
+    Repo[PrivacyRepository<br>App Package Scans & Database Syncs]
+    DB[Room Database<br>SQLite DAOs & Local Entities]
+    Service[AppAccessibilityService<br>Background Window Monitoring]
+    Mgr[AppLockManager<br>Thread-Safe Session Tokens]
+    Utils[SecurityUtils<br>SHA-256 Hashing & Salt Blocks]
+
+    UI -->|observes| VM
+    VM -->|invokes| Repo
+    Repo -->|queries| DB
+    Service -->|queries locked state| Mgr
+    Service -->|launches| UI
+    UI -->|validates credentials| Mgr
+    Mgr -->|hashes inputs| Utils
 ```
 
-### Flow of Execution
-1. **Interception**: `AppAccessibilityService` receives a `TYPE_WINDOW_STATE_CHANGED` event indicating a package has been opened.
-2. **Evaluation**: The service queries `AppLockManager` to check if the opened package is locked and currently lacks an active session unlock key.
-3. **Intervention**: If locked, the service starts `LockActivity` inside a new task window stack, placing the secure numeric keypad over the targeted app.
-4. **Resolution**: Correct entry of the master or decoy PIN updates the session-level unlock list in `AppLockManager` and closes the overlay activity. Locking state automatically resets when the screen is turned off.
+### Flow of Action
+1. **Detection**: `AppAccessibilityService` captures a `TYPE_WINDOW_STATE_CHANGED` event indicating a package launch.
+2. **Evaluation**: The service queries `AppLockManager` to check if the target package is locked and has an active unlocked session token.
+3. **Overlay**: If locked, the service starts `LockActivity` inside a new task window stack, placing the secure numeric keypad over the targeted app.
+4. **Resolution**: Entering the correct PIN registers an active unlock token inside `AppLockManager` and finishes the overlay activity. Session keys automatically clear when the device screen turns off.
 
 ---
 
-## 📂 Project Structure
+## 📂 Directory Structure
 
-Key modules, source directories, and core classes included in the repository:
+Key modules, source packages, and configurations included in this repository:
 
 ```
 ├── app/
@@ -120,126 +194,52 @@ Key modules, source directories, and core classes included in the repository:
 │   │       │   └── data_extraction_rules.xml # Prevents database exfiltration via local physical backup cables
 │   │       └── values/
 │   │           └── strings.xml        # Contains application strings and system services definitions
+│   └── build.gradle.kts               # Core Gradle build script with library dependencies
 └── gradle/
-    └── libs.versions.toml             # Standardized centralized version catalog
+    └── libs.versions.toml             # Centralized version catalog managing plugin configurations
 ```
 
 ---
 
-## 📡 Android Permissions
-
-To ensure transparent operations, the manifest declares only the specific permissions needed to intercept processes and draw overlays:
-
-| Permission Name | Type | Purpose |
-| :--- | :--- | :--- |
-| `android.permission.SYSTEM_ALERT_WINDOW` | System Overlay | Allows drawing the PIN overlay screen directly over other target applications. |
-| `android.permission.BIND_ACCESSIBILITY_SERVICE` | System Service | Binds the background scanner to monitor running packages on-device. |
-| `android.permission.PACKAGE_USAGE_STATS` | Usage Access | Enhances active application determination accuracy on varied Android operating systems. |
-| `android.permission.QUERY_ALL_PACKAGES` | Package Query | Enumerates packages installed on the device to populate the configuration dashboard. |
-| `android.permission.FOREGROUND_SERVICE` | Background Run | Keeps the lock validation and accessibility components active in the background. |
-| `android.permission.RECEIVE_BOOT_COMPLETED` | System Event | Re-initiates local locking services automatically when the device starts up. |
-
----
-
-## 🚀 Installation & Build Guide
+## 🚀 Getting Started
 
 ### Prerequisites
 * **JDK 17** or higher
-* **Android SDK Level 34** (Upside Down Cake) or higher
+* **Android SDK Level 34** or higher
 * **Gradle 8.0** or higher
 
-### Build Instructions
-
-Execute standard Gradle commands from the root directory to manage, compile, and build the application:
+### Compiling and Running
+Run the following Gradle commands from the root directory to manage and compile the application:
 
 ```bash
-# Clean and compile the debug package
+# Clean and compile debug package
 ./gradlew clean assembleDebug
 
-# Compile the release package (Generates unsigned APK)
+# Compile release package (generates unsigned release APK)
 ./gradlew assembleRelease
 
-# Compile the release bundle (Generates AAB for deployment)
-./gradlew bundleRelease
-
-# Verify linter rules across source directories
+# Verify linter rules across source files
 ./gradlew lintDebug
 
-# Run unit and local Robolectric tests
+# Run Unit and local Robolectric tests on JVM
 ./gradlew :app:testDebugUnitTest
 ```
 
-Generated outputs will be saved to:
-* **Debug APK**: `/app/build/outputs/apk/debug/app-debug.apk`
-* **Release APK**: `/app/build/outputs/apk/release/app-release-unsigned.apk`
-* **Release Bundle**: `/app/build/outputs/bundle/release/app-release.aab`
-
 ---
 
-## 🔧 Troubleshooting
+## 📖 Complete Documentation
 
-#### 1. Applications do not lock after toggling the shield in the dashboard
-* **Reason**: The core background accessibility service is likely disabled or was paused by the OS battery management system.
-* **Fix**: Navigate to `Settings -> Accessibility -> Installed Services`. Verify that `Privacy Lock` is explicitly turned ON.
-
-#### 2. The physical apps list in the dashboard is empty
-* **Reason**: The application requires Usage Access and Package Query permissions to map physical system applications.
-* **Fix**: Ensure `System Permissions Required` banner prompts are accepted. You can check permission status in `Settings -> Apps -> Special App Access -> Usage Access`.
-
-#### 3. Standard Android screenshots can still capture the overlay screen
-* **Reason**: Screenshot Protection is disabled in the configuration.
-* **Fix**: Navigate to the Settings pane within the application and switch "Screenshot Protection" to active. This immediately applies `FLAG_SECURE` to the system window properties.
-
----
-
-## 💬 FAQ
-
-**Q: Are my PIN entries sent to any external server?**  
-A: No. Privacy Lock is built without any internet permissions declared in the `AndroidManifest.xml`. There is no technical capability for the app to communicate with any external web service or remote server.
-
-**Q: Can I retrieve my PIN if I forget it?**  
-A: No. PIN values are stored strictly as salted SHA-256 hashes inside local SQLite files. There is no password recovery flow. If you forget your master security PIN, you must clear the application data via system settings to reset the system.
-
-**Q: How does Decoy PIN mode work?**  
-A: You can configure a separate numeric PIN under the settings screen. When entered, it unlocks the device normally, but logs the event as a standard access rather than revealing the master credential, helping avoid suspicion.
-
----
-
-## 🗺 Roadmap
-
-* [ ] **Biometric API Integration**: Support fallback unlocking via hardware fingerprint scanners.
-* [ ] **Intruder Notification Indicators**: Flash alerts on-screen when entering the dashboard if an intrusion event is recorded in the logs.
-* [ ] **Advanced App Scheduling**: Enable configuring custom time-of-day blocks during which application locking is automatically armed or disarmed.
-
----
-
-## 🤝 Contribution Guidelines
-
-We welcome contributions to help improve Privacy Lock. Please adhere to the following steps:
-
-1. **Code Formatting**: Ensure all code matches Kotlin style guides and formatting rules. Run `./gradlew lintDebug` before making a pull request.
-2. **Testing Constraints**: Ensure all changes are verified by writing or running Unit/Robolectric test tasks. Running `./gradlew :app:testDebugUnitTest` must return clean passes.
-3. **Branch Hygiene**: Submit all modifications to the `main` branch through small, self-contained, and atomic pull requests.
-
----
-
-## 🛡 Security Policy
-
-We take security issues within this utility seriously. Since the application is entirely offline, vulnerabilities are restricted to local side-channel analysis and local database bypasses.
-
-* **Reporting Vulnerabilities**: Please contact the maintainer directly through the security contact email specified in [SECURITY.md](SECURITY.md). Do not open public GitHub issues for discovered bypasses.
-* **Scope**: We actively maintain security updates for the current major release version target.
+Explore the comprehensive guides organized in the repository:
+* 📘 **[Frequently Asked Questions](FAQ.md)**: Frequently asked questions for users, developers, and security researchers.
+* 🛠️ **[Support Guidelines](SUPPORT.md)**: Official channels, triage processes, and known platform limitations.
+* 🤝 **[Contributing Guide](CONTRIBUTING.md)**: Coding standards, pull request checklists, and commit formatting rules.
+* 🛡️ **[Security Policy](SECURITY.md)**: Vulnerability disclosure policies and cryptographic standards.
+* 📜 **[Code of Conduct](CODE_OF_CONDUCT.md)**: Community rules and behavior standards.
+* 🗺️ **[Development Roadmap](ROADMAP.md)**: Near-term, mid-term, and long-term milestones.
+* 🔄 **[Changelog](CHANGELOG.md)**: Keep track of every major version change.
 
 ---
 
 ## 📄 License
 
 This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for complete details.
-
----
-
-## 🤝 Acknowledgements
-
-* **Jetpack Compose Teams**: For providing declarative UI paradigms.
-* **Material Design Team**: For standard M3 specifications.
-* **Android Open Source Project (AOSP)**: For foundational system services.

@@ -1,42 +1,45 @@
 # Contributing to Privacy Lock
 
-We are excited that you want to contribute to **Privacy Lock**! To maintain a production-grade, secure, and performant enterprise application, please review the guidelines below.
+We are excited that you want to contribute to **Privacy Lock**! To maintain a production-grade, secure, and performant enterprise utility, please review the guidelines below before proposing changes.
 
 ---
 
-## Code of Conduct
+## 📜 Code of Conduct
 
 By participating in this project, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ---
 
-## Development Workflow
+## 🔄 Development Workflow
 
-We follow a typical feature branch workflow:
+We follow a standard feature branch workflow:
 
-1. **Fork & Clone**: Fork the repository and clone it to your local machine.
+1. **Fork & Clone**: Fork the repository on GitHub and clone it to your local environment.
 2. **Create Branch**: Create a feature or bugfix branch:
    - Features: `feature/your-feature-name`
    - Bugfixes: `bugfix/issue-description`
    - Security: `security/mitigation-name`
-3. **Write Code**: Implement your changes adhering to our Kotlin and Compose standards.
-4. **Test Your Changes**: Verify compilation and run JVM-level unit/Robolectric tests before submitting.
-5. **Commit**: Keep commits small and use professional, descriptive commit messages (see [Commit Style](#commit-message-guidelines) below).
-6. **Push & PR**: Push changes and open a Pull Request against the `main` branch.
+3. **Implement Changes**: Add your code adhering to our Kotlin, Compose, and database standards.
+4. **Local Verification**: Ensure compilation and run JVM-level unit/Robolectric tests before submitting:
+   ```bash
+   ./gradlew compileDebugSources :app:testDebugUnitTest
+   ```
+5. **Atomic Commits**: Keep commits small, self-contained, and structured (see [Commit Style](#commit-message-guidelines) below).
+6. **Push & Pull Request**: Push changes and open a Pull Request against the `main` branch, filling out the Pull Request Template.
 
 ---
 
-## Coding Standards
+## 🛠️ Coding Standards
 
 ### 1. Kotlin & Jetpack Compose
-- **Architecture**: Follow the clean Model-View-ViewModel (MVVM) architecture with single sources of truth (e.g., Room database).
-- **State Management**: Use `StateFlow` or `MutableState` and collect states using `collectAsStateWithLifecycle()` to remain lifecycle-aware.
-- **Dependency Injection**: Use simple constructor injection where possible.
-- **Modifiers**: Keep layouts flexible. Always avoid hardcoded heights and widths. Prefer container bounds (`fillMaxWidth()`, etc.) and Material 3 design tokens.
+* **Architecture**: Follow clean Model-View-ViewModel (MVVM) principles with single sources of truth (e.g. SQLite database synced via Repository).
+* **State Management**: Use `StateFlow` and collect states using `collectAsStateWithLifecycle()` inside composables to ensure lifecycle awareness.
+* **Dependency Injection**: Use standard constructor injection.
+* **Responsive Layouts**: Do not use hardcoded widths or heights. Rely on fluid constraints (`fillMaxWidth()`, etc.) and Material 3 design tokens.
 
 ### 2. UI Testability (TestTags)
-- Interactive and key visual elements **MUST** specify a unique `testTag`.
-- Use `snake_case` naming for test tags.
+* All interactive and key visual elements **MUST** specify a unique `testTag`.
+* Use `snake_case` naming for test tags.
   ```kotlin
   Button(
       onClick = { /* ... */ },
@@ -47,22 +50,22 @@ We follow a typical feature branch workflow:
   ```
 
 ### 3. Resource Management
-- **Strings**: Do not hardcode user-facing strings. Add them to `res/values/strings.xml` with descriptive lowercase IDs.
-- **Icons**: Utilize Google Material Symbols. Favor `Icons.AutoMirrored` for directional items.
+* **Strings**: Do not hardcode user-facing strings. Add them to `res/values/strings.xml` with descriptive lowercase IDs.
+* **Icons**: Utilize Google Material Symbols. Favor `Icons.AutoMirrored` for directional items.
 
 ---
 
-## Security Practices (Mandatory)
+## 🛡️ Security Practices (MANDATORY)
 
-Since **Privacy Lock** is a security-first utility, every contributor must follow these rules:
-1. **Never Hardcode Credentials**: All keys, secrets, or configurations must reside in environment configurations or gradle-injected properties.
-2. **Fail Securely**: All security-critical operations (PIN validation, database access, Keystore encryption) must fail closed. If an exception occurs, deny access by default.
-3. **Randomness**: Always use `java.security.SecureRandom` instead of `kotlin.random.Random` for cryptographic features or code generation.
-4. **Data Privacy**: Local caches or logs must never store plaintext user PINs, passwords, or personal keys.
+Since Privacy Lock is a security-first utility, every contributor must follow these rules:
+1. **Never Hardcode Credentials**: All configuration secrets must reside in Gradle-injected properties or environment setups.
+2. **Fail Securely**: All security-critical operations (PIN validation, database queries) must fail closed. If an exception occurs, deny access by default.
+3. **Cryptographic Randomness**: Always use `java.security.SecureRandom` instead of `kotlin.random.Random` for cryptographic features, keypad shuffling, or key generation.
+4. **Data Isolation**: Local databases must never store plaintext PINs, passwords, or keys. Always store salted SHA-256 hashes with secure salts.
 
 ---
 
-## Commit Message Guidelines
+## 📝 Commit Message Guidelines
 
 We encourage the **Conventional Commits** format:
 
@@ -74,21 +77,22 @@ We encourage the **Conventional Commits** format:
 [optional footer]
 ```
 
-- **feat**: A new feature (e.g., `feat(auth): add biometric lock screen`)
-- **fix**: A bug fix (e.g., `fix(db): resolve thread block during Room migration`)
-- **docs**: Documentation updates (e.g., `docs(readme): expand installation instructions`)
-- **style**: Code style changes (whitespace, formatting, missing semi-colons, etc.)
-- **refactor**: Code changes that neither fix a bug nor add a feature
-- **perf**: Performance improvements
-- **test**: Adding or correcting tests
+* **feat**: A new feature (e.g., `feat(auth): add biometric lock screen fallback`)
+* **fix**: A bug fix (e.g., `fix(keypad): center 0 in bottom row of scrambled keypad`)
+* **docs**: Documentation updates (e.g., `docs(readme): link to FAQ and Roadmap`)
+* **style**: Code style changes (whitespace, formatting, missing semi-colons, etc.)
+* **refactor**: Code changes that neither fix a bug nor add a feature
+* **perf**: Performance improvements
+* **test**: Adding or correcting tests
 
 ---
 
-## Pull Request Checklist
+## 📋 Pull Request Checklist
 
 Before submitting your Pull Request, ensure that:
 - [ ] The app builds successfully with `./gradlew compileDebugSources`.
 - [ ] All unit and Robolectric tests pass.
 - [ ] No hardcoded passwords, private keys, or API tokens are checked in.
-- [ ] No debug code (e.g., `Log.d` with sensitive information or unfinished mocks) is present.
-- [ ] All interactive UI components have a unique `testTag` for automation testing.
+- [ ] No debug code (e.g. `Log.d` with sensitive information or unfinished mock files) is present.
+- [ ] All interactive UI components have a unique `testTag` for automated UI tests.
+- [ ] The PR title follows Conventional Commits formatting.
