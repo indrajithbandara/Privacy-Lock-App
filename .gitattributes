@@ -1,0 +1,38 @@
+# Git Attributes configuration for Privacy Lock
+
+# Default behavior: Automatic line ending normalization (LF in repo, OS-specific on disk)
+* text=auto
+
+# Source code - Force LF line endings on all checkouts (critical for consistency)
+*.kt text eol=lf diff=kotlin
+*.kts text eol=lf diff=kotlin
+*.java text eol=lf diff=java
+*.xml text eol=lf
+*.properties text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+.editorconfig text eol=lf
+.gitignore text eol=lf
+
+# Build scripts & binaries
+*.gradle text eol=lf
+gradlew text eol=lf
+*.bat text eol=crlf
+
+# Binary files - Keep exactly as they are, no line ending conversions
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.jar binary
+*.jks binary
+*.keystore binary
+*.so binary
+*.aar binary
+*.apk binary
+*.aab binary

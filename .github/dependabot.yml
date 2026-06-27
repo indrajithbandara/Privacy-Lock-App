@@ -1,14 +1,54 @@
+# Dependabot configuration for Privacy Lock
+# Web: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+
 version: 2
 updates:
+  # Gradle & Android Dependencies
   - package-ecosystem: "gradle"
     directory: "/"
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+      day: "monday"
+    open-pull-requests-limit: 5
     target-branch: "main"
+    
+    # Ignore breaking major version upgrades of compiler plugins and SDK tools that require careful manual validation
+    ignore:
+      - dependency-name: "org.jetbrains.kotlin:kotlin-gradle-plugin"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.jetbrains.kotlin:kotlin-serialization"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "com.android.tools.build:gradle"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "com.google.devtools.ksp"
+        update-types: ["version-update:semver-major"]
 
+    # Group updates to reduce PR noise and make merging easier
+    groups:
+      androidx-dependencies:
+        patterns:
+          - "androidx.*"
+      compose-dependencies:
+        patterns:
+          - "androidx.compose.*"
+      testing-dependencies:
+        patterns:
+          - "junit*"
+          - "org.robolectric*"
+          - "io.github.takahirom.roborazzi*"
+      room-dependencies:
+        patterns:
+          - "androidx.room.*"
+
+  # GitHub Actions Workflows
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "monday"
     open-pull-requests-limit: 5
+    groups:
+      actions-dependencies:
+        patterns:
+          - "actions/*"
+          - "gradle/*"

@@ -1,0 +1,56 @@
+name: "CodeQL Analysis"
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  schedule:
+    - cron: '30 4 * * 1' # Runs at 04:30 UTC every Monday
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze Code
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+
+    - name: Setup Gradle Cache
+      uses: gradle/actions/setup-gradle@v3
+
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: 'java-kotlin'
+        queries: security-extended,security-and-quality
+
+    # Build the application with gradle (required for compiled languages like Java/Kotlin)
+    - name: Build Codebase
+      run: |
+        # Setup temporary .env file for build satisfaction
+        if [ -f .env.example ]; then
+          cp .env.example .env
+        else
+          touch .env
+        fi
+        ./gradlew assembleDebug --no-daemon
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:java-kotlin"
