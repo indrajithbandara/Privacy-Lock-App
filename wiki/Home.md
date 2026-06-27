@@ -9,34 +9,51 @@ Privacy Lock is an offline-first Android security application built with modern 
 ## Table of Contents
 
 * **Getting Started**
-  * [[Installation]] — System requirements, build commands, and troubleshooting.
-  * [[Getting Started]] — Initial setup, permission wizard, and creating your first lock.
+  * [[Installation]] — System requirements, hardware targets, and quick-start guides.
+  * [[Features]] — Comprehensive feature tour, deniability profiles, and matrices.
+  * [[Build Instructions]] — How to compile, local environment configurations, and `.env` setup.
 * **Architecture & Internals**
-  * [[Architecture]] — MVVM structure, state synchronization, and Room database flows.
-  * [[Project Structure]] — Detailed package breakdown of the codebase.
-  * [[App Lock Engine]] — Accessibility service implementation, package detection, and overlay life cycle.
-  * [[Database]] — Schema definitions, Entity designs, and backup/restore serialization.
-* **Security & Configuration**
-  * [[Security]] — PIN hashing algorithms, biometric bypasses, and screenshot shielding.
-  * [[Permissions]] — Explanations and configurations for Accessibility, Usage Access, and Overlay.
-  * [[Settings]] — In-depth specifications for all in-app customization options.
-* **Resources & Support**
-  * [[User Guide]] — End-user manual and navigation flows.
+  * [[Architecture]] — MVVM system patterns, data flows, and flow-based presentation models.
+  * [[Accessibility Service]] — Deep system event integration, package filters, and reliability optimizations.
+  * [[Lock Engine]] — Lock lifecycles, cache mechanics, overlay flags, and double-back blockades.
+  * [[Database]] — Local Room SQLite table schemas, entity configurations, and transactional migrations.
+* **Security & Auditing**
+  * [[Security Model]] — Zero-knowledge local schemas, PIN hashes, and threat mitigation properties.
+  * [[Privacy Center]] — Interactive audit logging, timeline telemetry, and intruder alert systems.
+  * [[Settings]] — User-customizable configs, haptic triggers, and backup profiles.
+* **Project Governance & CI/CD**
+  * [[CI/CD Pipeline]] — Automated GitHub Actions triggers, linter analysis, and binary builds.
+  * [[Developer Guide]] — Core packages breakdown, class structures, and code style conventions.
+  * [[Project Board]] — Agile board, custom attributes, custom workflows, and task backlog.
+  * [[Release Process]] — Build targets, F-Droid metadata, and repository version alignment.
+  * [[Roadmap]] — Development goals, version milestones, and feature scheduling.
+* **Support & FAQ**
+  * [[Troubleshooting]] — Known issue diagnostic steps, battery whitelists, and log checks.
   * [[FAQ]] — Comprehensive list of 30 frequently asked questions.
-  * [[Troubleshooting]] — Known issues and diagnostic steps.
-* **Project Governance**
-  * [[Contributing]] — Guidelines for code, styles, and testing.
-  * [[GitHub Workflow]] — Branch management, CI/CD, and release actions.
-  * [[Project Board]] — Kanban agile pipeline, custom fields, and task specifications.
-  * [[Release Process]] — How updates are packaged and published.
-  * [[Changelog]] — Release history and design iteration notes.
-  * [[Roadmap]] — Development goals and planned improvements.
-* **Reference & Legal**
-  * [[API Reference]] — Key interface, helper, and class documentation.
-  * [[Developer Guide]] — Technical details for extending capabilities.
-  * [[License]] — Legal usage rights.
-  * [[Privacy Policy]] — On-device data guarantees.
-  * [[Security Policy]] — Vulnerability reporting and updates.
+
+---
+
+## 🎨 2. Comprehensive Navigation Map
+
+| Section | Target File Link | Core Subject |
+| :--- | :--- | :--- |
+| **Home** | [[Home]] | Project portal, layout graphs, and general capabilities. |
+| **Installation** | [[Installation]] | Standard machine setup, JDK specifications, and basic directory configuration. |
+| **Features** | [[Features]] | Detailed outline of credential states, overlays, and device safety indicators. |
+| **Architecture** | [[Architecture]] | Clean MVVM models, Flow states, and real-time interaction sequences. |
+| **Security Model** | [[Security Model]] | SHA-256 properties, dynamic screenshot blocking, and randomized keypad vectors. |
+| **Accessibility Service** | [[Accessibility Service]] | Background system state transitions, event dispatch, and battery profiles. |
+| **Lock Engine** | [[Lock Engine]] | Thread-safe memory cached matching, overlay parameters, and Home gestures. |
+| **Database** | [[Database]] | Room Persistence schemas, DAOs, reactive streams, and database migration rules. |
+| **Privacy Center** | [[Privacy Center]] | Dynamic safety dashboards, historical logs, and visual incident timelines. |
+| **Settings** | [[Settings]] | Global app properties, custom system behaviors, and text backups. |
+| **Build Instructions** | [[Build Instructions]] | Gradle tasks, compilation parameters, and secure environment setups. |
+| **CI/CD Pipeline** | [[CI/CD Pipeline]] | Automated workflow specifications, caching policies, and Dependabot rules. |
+| **Troubleshooting** | [[Troubleshooting]] | Platform sleep Whitelisting, diagnostics, and build recovery procedures. |
+| **FAQ** | [[FAQ]] | 30 frequently asked questions and detailed conceptual clarifications. |
+| **Developer Guide** | [[Developer Guide]] | Extensibility points, package lists, and repository contribution workflows. |
+| **Release Process** | [[Release Process]] | Publishing schemas, signing rules, and package version alignments. |
+| **Roadmap** | [[Roadmap]] | Four-phase release timeline, features backlog, and future deliverables. |
 
 ---
 
