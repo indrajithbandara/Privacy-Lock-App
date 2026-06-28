@@ -1,0 +1,11 @@
+Privacy Lock is a production-grade, highly secure, completely offline application vault and privacy logger engineered natively for the Android ecosystem. Operating strictly on-device with zero network access permissions, Privacy Lock uses the native Android Accessibility framework to intercept targeted application launches in real-time, instantly displaying a secure, randomized PIN overlay that blocks unauthorized physical access.
+
+Designed for individuals requiring absolute local privacy, the application includes a rich suite of security defenses—such as cryptographic credential hashing, programmatically bound window capture shielding, a stealth decoy vault, and a local chronological intrusion timeline.
+
+KEY FEATURES:
+* Real-Time App Interception: Integrates with the native Android AccessibilityService to block launches instantly before the target application draws its first frame.
+* Plausible Deniability Vault: Set up a Decoy PIN that unlocks a fake, secondary dashboard configuration to mask your actual security setup during physical coercion.
+* Anti-Smudge Scrambled Keypad: Shuffles the numeric keypad layout dynamically to prevent grease smudge or movement-pattern tracking attacks.
+* Screenshot & Recents Shield: Programmatically binds window security flags to render overlays completely black in screenshot/recording utilities and system Recents carousels.
+* Local Intrusion Timeline: Logs failed access attempts locally inside secure, encrypted SQLite tables with masked input records to prevent shoulder-surfing.
+* Zero Network Access: Requires no internet or network permissions whatsoever, ensuring your passcodes and local data never leave your device.

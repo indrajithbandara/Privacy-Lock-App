@@ -1,0 +1,6 @@
+* Initial production-grade release of Privacy Lock.
+* Real-time app interception via Accessibility Service.
+* Standard and Scrambled Keypads for PIN entries.
+* Plausible Deniability Decoy PIN configuration.
+* Local chronological intrusion logs with visual avatars.
+* Completely offline, 100% private on-device security.

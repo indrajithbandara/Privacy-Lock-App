@@ -98,27 +98,56 @@ jobs:
       - name: Build Debug & Release Artifacts
         run: ./gradlew assembleDebug assembleRelease bundleRelease --no-daemon
 
-      - name: Upload Debug APK
+      - name: Organize Release Artifacts & Generate Checksums
+        run: |
+          mkdir -p release-artifacts
+          # Copy APKs
+          cp app/build/outputs/apk/opensource/release/app-opensource-release.apk release-artifacts/privacy-lock-opensource-release.apk
+          cp app/build/outputs/apk/play/release/app-play-release.apk release-artifacts/privacy-lock-play-release.apk
+          cp app/build/outputs/apk/opensource/debug/app-opensource-debug.apk release-artifacts/privacy-lock-opensource-debug.apk
+          cp app/build/outputs/apk/play/debug/app-play-debug.apk release-artifacts/privacy-lock-play-debug.apk
+          
+          # Copy AABs
+          cp app/build/outputs/bundle/opensourceRelease/app-opensource-release.aab release-artifacts/privacy-lock-opensource-release.aab
+          cp app/build/outputs/bundle/playRelease/app-play-release.aab release-artifacts/privacy-lock-play-release.aab
+          
+          # Generate Checksums
+          cd release-artifacts
+          sha256sum privacy-lock-opensource-release.apk > privacy-lock-opensource-release.apk.sha256
+          sha256sum privacy-lock-play-release.apk > privacy-lock-play-release.apk.sha256
+          sha256sum privacy-lock-opensource-release.aab > privacy-lock-opensource-release.aab.sha256
+          sha256sum privacy-lock-play-release.aab > privacy-lock-play-release.aab.sha256
+          cd ..
+
+      - name: Upload OpenSource Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: privacy-lock-opensource-release
+          path: release-artifacts/privacy-lock-opensource-release.apk
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload Release APK
+      - name: Upload Play Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: app/build/outputs/apk/release/app-release.apk
+          name: privacy-lock-play-release
+          path: release-artifacts/privacy-lock-play-release.apk
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload Release AAB
+      - name: Upload OpenSource Release AAB
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-bundle
-          path: app/build/outputs/bundle/release/app-release.aab
+          name: privacy-lock-opensource-bundle
+          path: release-artifacts/privacy-lock-opensource-release.aab
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Play Release AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: privacy-lock-play-bundle
+          path: release-artifacts/privacy-lock-play-release.aab
           if-no-files-found: error
           retention-days: 14
 
@@ -127,9 +156,14 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            app/build/outputs/apk/debug/app-debug.apk
-            app/build/outputs/apk/release/app-release.apk
-            app/build/outputs/bundle/release/app-release.aab
+            release-artifacts/privacy-lock-opensource-release.apk
+            release-artifacts/privacy-lock-play-release.apk
+            release-artifacts/privacy-lock-opensource-release.aab
+            release-artifacts/privacy-lock-play-release.aab
+            release-artifacts/privacy-lock-opensource-release.apk.sha256
+            release-artifacts/privacy-lock-play-release.apk.sha256
+            release-artifacts/privacy-lock-opensource-release.aab.sha256
+            release-artifacts/privacy-lock-play-release.aab.sha256
           draft: false
           prerelease: false
           generate_release_notes: true

@@ -20,6 +20,16 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
+  flavorDimensions.add("distribution")
+  productFlavors {
+    create("play") {
+      dimension = "distribution"
+    }
+    create("opensource") {
+      dimension = "distribution"
+    }
+  }
+
   signingConfigs {
     create("release") {
       val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"

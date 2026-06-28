@@ -1,0 +1,1 @@
+Offline-first secure app locker and privacy center with deniability decoy and logs.

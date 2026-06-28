@@ -1,9 +1,9 @@
 # Privacy Lock
 
 <p align="center">
-  <img src="screenshots/home.png" alt="Privacy Lock Dashboard" width="220" style="border-radius: 20px; margin: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);" />
-  <img src="screenshots/lock_screen.png" alt="Privacy Lock Keypad Overlay" width="220" style="border-radius: 20px; margin: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);" />
-  <img src="screenshots/security_center.png" alt="Privacy Lock Security Timeline" width="220" style="border-radius: 20px; margin: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/home.png" alt="Privacy Lock Dashboard" width="220" style="border-radius: 20px; margin: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/lock_screen.png" alt="Privacy Lock Keypad Overlay" width="220" style="border-radius: 20px; margin: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);" />
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/security_center.png" alt="Privacy Lock Security Timeline" width="220" style="border-radius: 20px; margin: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);" />
 </p>
 
 <p align="center">
@@ -90,9 +90,9 @@ graph TD
 
 | Onboarding & Permissions | Secure PIN Keypad | Privacy Timeline |
 | :---: | :---: | :---: |
-| <img src="screenshots/home.png" width="220" style="border-radius: 12px;" /> | <img src="screenshots/lock_screen.png" width="220" style="border-radius: 12px;" /> | <img src="screenshots/security_center.png" width="220" style="border-radius: 12px;" /> |
+| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/home.png" width="220" style="border-radius: 12px;" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/lock_screen.png" width="220" style="border-radius: 12px;" /> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/security_center.png" width="220" style="border-radius: 12px;" /> |
 
-*(Additional screenshots, layout specs, and guidelines can be found in our [Screenshots Directory](screenshots/README.md).)*
+*(Additional screenshots, layout specs, and guidelines can be found in our [Screenshots Directory](fastlane/metadata/android/en-US/images/phoneScreenshots/README.md).)*
 
 ---
 
