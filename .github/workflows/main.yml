@@ -21,12 +21,12 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -35,7 +35,7 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Setup Gradle Cache
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: ${{ github.ref_name != 'main' }}
 
@@ -87,7 +87,7 @@ jobs:
 
       - name: Upload Test & Lint Reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: privacy-lock-reports
           path: |
@@ -120,7 +120,7 @@ jobs:
           cd ..
 
       - name: Upload OpenSource Release APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: privacy-lock-opensource-release
           path: release-artifacts/privacy-lock-opensource-release.apk
@@ -128,7 +128,7 @@ jobs:
           retention-days: 14
 
       - name: Upload Play Release APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: privacy-lock-play-release
           path: release-artifacts/privacy-lock-play-release.apk
@@ -136,7 +136,7 @@ jobs:
           retention-days: 14
 
       - name: Upload OpenSource Release AAB
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: privacy-lock-opensource-bundle
           path: release-artifacts/privacy-lock-opensource-release.aab
@@ -144,7 +144,7 @@ jobs:
           retention-days: 14
 
       - name: Upload Play Release AAB
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: privacy-lock-play-bundle
           path: release-artifacts/privacy-lock-play-release.aab
