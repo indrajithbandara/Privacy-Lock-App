@@ -36,3 +36,11 @@ Android accessibility-based overlays are not an operating-system security bounda
 - New and successfully verified legacy credential records are wrapped in Android Keystore AES-GCM. Missing or invalid keys deny verification. Hardware-backed key use is device-dependent and not asserted. Database encryption remains a separate unresolved requirement.
 - Added policy unit tests and device tests for cooldown persistence and Keystore tamper rejection, as well as API 24/36 emulator CI. New tests and builds are pending; device reboot and physical hardware behavior remain unverified.
 - Android CI run 148 and Dependency Review run 30 passed on commit `1fb176272510b71647541648e56579e37f84d703`. CodeQL run 56 failed. New changes require fresh validation.
+
+## Encrypted database and protection lifecycle update
+
+- SQLCipher-backed Room storage with a separate randomly generated database passphrase wrapped by an Android Keystore AES-GCM key. Version-2 plaintext records are copied transactionally and compared before a durable migration marker is written and the old database is retired. Unsupported legacy schema versions or missing keys fail without destructive fallback. Migration, startup performance, backup and physical-device behavior require validation. The initial migration blocks database availability while running on an I/O dispatcher; large-data startup timing is not yet measured.
+- Added Android device test for encrypted file header, legacy records and reopening. CI execution pending.
+- Accessibility service now queries the authoritative protection row, cancels stale foreground queries, clears sessions on lifecycle events, handles changed lock targets and excludes system/launcher packages from new protection. Accessibility events are not an OS-level security boundary; rapid switching, multi-window, recents and OEM behavior remain unverified. Owner controls remain accessible.
+- Removed unnecessary Foojay toolchain resolver after API 36 job failed to resolve it. API 24 instrumentation passed on previous commit; latest run pending. Android CI and Dependency Review passed at commit 4fe191eea0dc1d485b1e3f42f86afacd83d42eb7. CodeQL upload still conflicts with repository default configuration.
+- Product language remains English; Sinhala and Tamil localization removed from scope at owner request.
