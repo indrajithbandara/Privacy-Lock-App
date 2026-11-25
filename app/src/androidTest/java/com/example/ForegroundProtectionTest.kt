@@ -110,30 +110,35 @@ class ForegroundProtectionTest {
     /** Exercise the visible, user-controlled Android Settings consent flow; no secure-setting writes. */
     private fun changeServiceThroughSettings(enable: Boolean) {
         if (SecurityUtils.isAccessibilityServiceEnabled(context) == enable) return
-        if (enable) {
-            ActivityScenario.launch(MainActivity::class.java).use {
+        val scenario = if (enable) ActivityScenario.launch(MainActivity::class.java) else null
+        try {
+            if (enable) {
                 val disclosure = context.getString(R.string.accessibility_settings)
                 compose.waitUntil(timeoutMillis = 30_000) { compose.onAllNodesWithText(disclosure).fetchSemanticsNodes().isNotEmpty() }
                 compose.onNodeWithText(disclosure).assertIsDisplayed().performClick()
                 compose.onNodeWithText(context.getString(R.string.accessibility_consent_open)).assertIsDisplayed().performClick()
                 eventually("system settings opened") { nodes().any { it.packageName?.toString() == "com.android.settings" } }
+            } else launchSettings()
+            val name = context.getString(R.string.app_name)
+            eventually("accessibility settings service list") {
+                if (hasText(name)) return@eventually true
+                clickText("Downloaded apps") || clickText("Installed apps")
+                false
             }
-        } else launchSettings()
-        val name = context.getString(R.string.app_name)
-        eventually("accessibility settings service list") {
-            if (hasText(name)) return@eventually true
-            clickText("Downloaded apps") || clickText("Installed apps")
-            false
+            eventually("open service settings") { clickText(name) }
+            eventually("service switch") { clickSwitch() }
+            eventually("system consent", 15_000) {
+                if (SecurityUtils.isAccessibilityServiceEnabled(context) == enable) return@eventually true
+                listOf("Allow", "OK", "Stop", "Turn off").any { clickText(it) }
+                false
+            }
+            eventually("service connection state") { AppLockManager.serviceConnected.value == enable }
+            android.util.Log.i("ForegroundProtectionTest", "Service consent completed: $enable")
+        } finally {
+            // Do not close the launching activity while Android Settings is still in
+            // its user consent flow; doing so can remove the Settings task on older APIs.
+            scenario?.close()
         }
-        eventually("open service settings") { clickText(name) }
-        eventually("service switch") { clickSwitch() }
-        eventually("system consent", 15_000) {
-            if (SecurityUtils.isAccessibilityServiceEnabled(context) == enable) return@eventually true
-            listOf("Allow", "OK", "Stop", "Turn off").any { clickText(it) }
-            false
-        }
-        eventually("service connection state") { AppLockManager.serviceConnected.value == enable }
-        android.util.Log.i("ForegroundProtectionTest", "Service consent completed: $enable")
     }
 
     private fun shell(command: String) {
