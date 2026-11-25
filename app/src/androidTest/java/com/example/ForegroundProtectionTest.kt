@@ -1,10 +1,11 @@
 package com.example
 
 import android.app.UiAutomation
-import android.content.Intent
+import android.graphics.Rect
 import android.os.Build
 import android.os.SystemClock
-import android.provider.Settings
+import android.view.MotionEvent
+import android.view.InputDevice
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -52,12 +53,23 @@ class ForegroundProtectionTest {
             if (current.isClickable && current.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true
             current = current.parent
         }
-        return false
+        // Settings rows may expose non-clickable text or omit accessibility click actions.
+        // Tap the visible label on the real emulator screen as an ordinary user would.
+        if (!node.isVisibleToUser) return false
+        val bounds = Rect().also(node::getBoundsInScreen)
+        if (bounds.isEmpty) return false
+        val now = SystemClock.uptimeMillis()
+        val down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, bounds.exactCenterX(), bounds.exactCenterY(), 0)
+        val up = MotionEvent.obtain(now, now + 50, MotionEvent.ACTION_UP, bounds.exactCenterX(), bounds.exactCenterY(), 0)
+        down.source = InputDevice.SOURCE_TOUCHSCREEN
+        up.source = InputDevice.SOURCE_TOUCHSCREEN
+        return try { automation.injectInputEvent(down, true) && automation.injectInputEvent(up, true) }
+        finally { down.recycle(); up.recycle() }
     }
-    private fun clickText(text: String): Boolean = nodes().firstOrNull { it.text?.toString() == text }?.let(::clickNode) == true
+    private fun clickText(text: String): Boolean = nodes().firstOrNull { it.isVisibleToUser && it.text?.toString() == text }?.let(::clickNode) == true
     private fun clickSwitch(): Boolean = nodes().firstOrNull { it.className?.toString() == "android.widget.Switch" && it.isEnabled }?.let(::clickNode) == true
     private fun launchSettings() {
-        context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        shell("am start -W -a android.settings.ACCESSIBILITY_SETTINGS -f 0x10008000")
     }
 
     /** Exercise the visible, user-controlled Android Settings consent flow; no secure-setting writes. */
@@ -70,7 +82,7 @@ class ForegroundProtectionTest {
             clickText("Downloaded apps") || clickText("Installed apps")
             false
         }
-        assertTrue("Open service settings", clickText(name))
+        eventually("open service settings") { clickText(name) }
         eventually("service switch") { clickSwitch() }
         eventually("system consent", 15_000) {
             if (SecurityUtils.isAccessibilityServiceEnabled(context) == enable) return@eventually true
@@ -78,6 +90,7 @@ class ForegroundProtectionTest {
             false
         }
         eventually("service connection state") { AppLockManager.serviceConnected.value == enable }
+        android.util.Log.i("ForegroundProtectionTest", "Service consent completed: $enable")
     }
 
     private fun shell(command: String) {
@@ -102,6 +115,7 @@ class ForegroundProtectionTest {
         assertTrue("Use a fresh test installation", previous.hashedPin.isEmpty())
         val serviceWasEnabled = SecurityUtils.isAccessibilityServiceEnabled(context)
         assertFalse("Use a fresh emulator permission state", serviceWasEnabled)
+        var failure: Throwable? = null
         try {
             assertTrue(repository.changePrimaryPin("", "246810"))
             repository.updateConfig { it.copy(autoLockTimeoutSeconds = 0, randomizeKeypad = false, biometricsEnabled = false) }
@@ -113,25 +127,36 @@ class ForegroundProtectionTest {
             launchFixture()
             val prompt = context.getString(R.string.auth_app_locked, "Protection test fixture")
             eventually("real lock activity") { hasText(prompt) }
+            android.util.Log.i("ForegroundProtectionTest", "Observed actual foreground lock")
             enterPin("111111")
             eventually("wrong PIN rejection") { hasText(context.getString(R.string.auth_denied)) }
             assertTrue(db.timelineEventDao().getAllEventsDirect().any { it.type == "AUTH_FAILURE" && it.appName == "Protection test fixture" })
+            android.util.Log.i("ForegroundProtectionTest", "Rejected incorrect PIN and recorded event")
             SystemClock.sleep(1500)
             enterPin("246810")
             eventually("fixture access after authentication") { hasText("Fixture content visible") }
+            android.util.Log.i("ForegroundProtectionTest", "Authenticated and observed fixture")
             shell("input keyevent KEYCODE_HOME")
             eventually("leave fixture") { !AppLockManager.isForegroundTarget(fixture) }
             launchFixture()
             eventually("relock after real app switch") { hasText(prompt) }
+            android.util.Log.i("ForegroundProtectionTest", "Observed relocking after application switch")
             changeServiceThroughSettings(false)
             assertFalse(AppLockManager.serviceConnected.value)
+        } catch (error: Throwable) {
+            failure = error
+            throw error
         } finally {
             // Restore disposable test state without changing any permission through privileged APIs.
             repository.toggleAppLock(fixture, false)
             db.securityConfigDao().insertConfig(previous)
             AppLockManager.clearTemporaryUnlocks()
-            if (SecurityUtils.isAccessibilityServiceEnabled(context)) changeServiceThroughSettings(false)
-            shell("input keyevent KEYCODE_HOME")
+            try {
+                if (SecurityUtils.isAccessibilityServiceEnabled(context)) changeServiceThroughSettings(false)
+                shell("input keyevent KEYCODE_HOME")
+            } catch (cleanup: Throwable) {
+                failure?.addSuppressed(cleanup) ?: throw cleanup
+            }
         }
     }
 }
