@@ -194,12 +194,14 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
     /**
      * Setup a new standard PIN.
      */
-    fun setupPin(pin: String) {
+    fun setupPin(currentPin: String, newPin: String, onComplete: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val hashed = withContext(Dispatchers.Default) { SecurityUtils.hashPin(pin) }
-            val current = repository.getConfigDirect()
-            repository.saveConfig(current.copy(hashedPin = hashed))
-            repository.logEvent("CONFIG", "Master security PIN updated successfully.")
+            val success = try {
+                repository.changePrimaryPin(currentPin, newPin)
+            } catch (_: Exception) {
+                false
+            }
+            onComplete(success)
         }
     }
 
