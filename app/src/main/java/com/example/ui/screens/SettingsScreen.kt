@@ -37,6 +37,8 @@ fun SettingsScreen(
 ) {
     val config by viewModel.securityConfig.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    LaunchedEffect(Unit) { viewModel.loadEventRetention() }
+    var pendingRetention by remember { mutableStateOf<Int?>(null) }
 
     var showPinSetup by remember { mutableStateOf(false) }
     var currentPinInput by remember { mutableStateOf("") }
@@ -460,6 +462,21 @@ fun SettingsScreen(
             }
         }
 
+        item {
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Security event retention", style = MaterialTheme.typography.titleMedium)
+                    Text("Keep a limited number of recent events, or preserve your full history. The event screen displays the latest 100 records.")
+                    listOf(0, 100, 500, 1000).forEach { limit ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            RadioButton(selected = viewModel.eventRetentionLimit == limit, onClick = { pendingRetention = limit })
+                            Text(if (limit == 0) "Keep all" else "Keep latest $limit")
+                        }
+                    }
+                }
+            }
+        }
+
         // Local Storage Backup & Restore Settings
         item {
             Text(
@@ -513,6 +530,17 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    pendingRetention?.let { limit ->
+        AlertDialog(onDismissRequest = { pendingRetention = null }, title = { Text("Change event retention?") },
+            text = { Text(if (limit == 0) "Future events will be kept until you clear them." else "Older records beyond the selected limit will be permanently removed.") },
+            confirmButton = { TextButton(onClick = {
+                viewModel.setEventRetention(limit) { success ->
+                    if (!success) Toast.makeText(context, "Unable to update retention", Toast.LENGTH_SHORT).show()
+                }
+                pendingRetention = null
+            }) { Text("Apply") } }, dismissButton = { TextButton(onClick = { pendingRetention = null }) { Text("Cancel") } })
     }
 
     // PIN Setup Dialog

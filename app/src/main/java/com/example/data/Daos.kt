@@ -17,6 +17,12 @@ interface LockedAppDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertApps(apps: List<LockedApp>)
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertNewApp(app: LockedApp): Long
+
+    @Query("UPDATE locked_apps SET name = :name, category = :category, iconName = :iconName WHERE packageName = :packageName")
+    suspend fun updateAppMetadata(packageName: String, name: String, category: String, iconName: String)
+
     @Query("UPDATE locked_apps SET isLocked = :isLocked WHERE packageName = :packageName")
     suspend fun updateAppLockStatus(packageName: String, isLocked: Boolean)
 
@@ -50,6 +56,9 @@ interface SecurityConfigDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertConfig(config: SecurityConfig)
 
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun initializeConfig(config: SecurityConfig): Long
+
     @Query("UPDATE security_config SET hashedPin = :replacement WHERE id = 'global' AND hashedPin = :expected")
     suspend fun replacePin(expected: String, replacement: String): Int
 }
@@ -67,6 +76,9 @@ interface TimelineEventDao {
 
     @Query("DELETE FROM timeline_events")
     suspend fun clearAllEvents()
+
+    @Query("DELETE FROM timeline_events WHERE id NOT IN (SELECT id FROM timeline_events ORDER BY timestamp DESC, id DESC LIMIT :limit)")
+    suspend fun retainNewestEvents(limit: Int)
 }
 
 @Dao

@@ -70,7 +70,13 @@ class AppAccessibilityService : AccessibilityService() {
                 }
                 if (!AppLockManager.canProtect(applicationContext, name)) return@launch
                 // Read the current row instead of treating an empty asynchronous cache as authoritative.
-                val record = db.lockedAppDao().getApp(name)
+                var record = db.lockedAppDao().getApp(name)
+                if (record == null && configuration?.lockNewlyInstalledApps == true && configuration.hashedPin.isNotEmpty()) {
+                    withContext(Dispatchers.IO) {
+                        com.example.data.PrivacyRepository(db, applicationContext).syncInstalledApps(applicationContext)
+                    }
+                    record = db.lockedAppDao().getApp(name)
+                }
                 if (lastActivePackage != name || record?.isLocked != true ||
                     AppLockManager.isPackageTemporarilyUnlocked(name)) return@launch
                 startActivity(Intent(this@AppAccessibilityService, LockActivity::class.java).apply {

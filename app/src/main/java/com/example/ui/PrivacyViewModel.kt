@@ -149,6 +149,27 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    var eventRetentionLimit by mutableStateOf(0)
+        private set
+
+    fun loadEventRetention() {
+        eventRetentionLimit = repository.eventRetentionLimit()
+    }
+
+    fun setEventRetention(limit: Int, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            try {
+                repository.setEventRetentionLimit(limit)
+                eventRetentionLimit = limit
+                onResult(true)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                onResult(false)
+            }
+        }
+    }
+
     fun deleteSelfie(id: Int) {
         viewModelScope.launch {
             repository.deleteIntruderSelfie(id)

@@ -21,6 +21,17 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
     private val configDao = db.securityConfigDao()
     private val eventDao = db.timelineEventDao()
     private val selfieDao = db.intruderSelfieDao()
+    private val retentionPreferences = context.getSharedPreferences("event_retention", Context.MODE_PRIVATE)
+
+    fun eventRetentionLimit(): Int = retentionPreferences.getInt("limit", 0).takeIf { it in setOf(0, 100, 500, 1000) } ?: 0
+
+    suspend fun setEventRetentionLimit(limit: Int) {
+        require(limit in setOf(0, 100, 500, 1000))
+        withContext(Dispatchers.IO) {
+            check(retentionPreferences.edit().putInt("limit", limit).commit())
+            if (limit > 0) eventDao.retainNewestEvents(limit)
+        }
+    }
 
     val allApps: Flow<List<LockedApp>> = appDao.getAllApps()
     val securityConfig: Flow<SecurityConfig?> = configDao.getConfig()
@@ -30,9 +41,8 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
     suspend fun getApp(packageName: String): LockedApp? = appDao.getApp(packageName)
 
     suspend fun getConfigDirect(): SecurityConfig {
-        return configDao.getConfigDirect() ?: SecurityConfig().also {
-            configDao.insertConfig(it)
-        }
+        configDao.initializeConfig(SecurityConfig())
+        return checkNotNull(configDao.getConfigDirect())
     }
 
     suspend fun saveConfig(config: SecurityConfig) {
@@ -102,13 +112,17 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
     }
 
     suspend fun logEvent(type: String, description: String, appName: String? = null) {
-        eventDao.insertEvent(
-            TimelineEvent(
-                type = type,
-                description = description,
-                appName = appName
+        db.withTransaction {
+            eventDao.insertEvent(
+                TimelineEvent(
+                    type = type,
+                    description = description,
+                    appName = appName
+                )
             )
-        )
+            val limit = eventRetentionLimit()
+            if (limit > 0) eventDao.retainNewestEvents(limit)
+        }
     }
 
     suspend fun logAuthenticationFailure(appName: String? = null) {
@@ -173,6 +187,8 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
         }
 
         val currentAppsMap = appDao.getAllAppsDirect().associateBy { it.packageName }
+        val configuration = configDao.getConfigDirect()
+        val autoLock = configuration?.lockNewlyInstalledApps == true && configuration.hashedPin.isNotEmpty()
         val newAppsList = mutableListOf<LockedApp>()
 
         for (appInfo in installedApps) {
@@ -185,7 +201,7 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
             val category = getCategoryForApp(appInfo)
 
             val existing = currentAppsMap[appInfo.packageName]
-            val isLocked = existing?.isLocked ?: false
+            val isLocked = existing?.isLocked ?: (autoLock && AppLockManager.canProtect(context, appInfo.packageName))
             val isFavorite = existing?.isFavorite ?: false
             val isPinned = existing?.isPinned ?: false
             val iconName = existing?.iconName ?: getFallbackIconName(appInfo.packageName)
@@ -203,14 +219,19 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
             )
         }
 
-        appDao.insertApps(newAppsList)
+        db.withTransaction {
+            newAppsList.forEach { app ->
+                appDao.insertNewApp(app)
+                appDao.updateAppMetadata(app.packageName, app.name, app.category, app.iconName)
+            }
+        }
         val installedPackages = newAppsList.map { it.packageName }.toSet()
         for (existing in currentAppsMap.values) {
             if (existing.name.endsWith(" (Demo)") && existing.packageName !in installedPackages) {
                 appDao.deleteApp(existing.packageName)
             }
         }
-        logEvent("CONFIG", "Secure local privacy space synchronized with physical device apps.")
+        // Ordinary refreshes are not security events.
     }
 
     /**
@@ -221,9 +242,6 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
         syncInstalledApps(context)
 
         // Prepopulate default config too
-        val currentConfig = configDao.getConfigDirect()
-        if (currentConfig == null) {
-            configDao.insertConfig(SecurityConfig())
-        }
+        configDao.initializeConfig(SecurityConfig())
     }
 }
