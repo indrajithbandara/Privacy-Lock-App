@@ -3,6 +3,10 @@ package com.example.data
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.example.security.PinCredentials
+import com.example.security.SecurityUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 
@@ -28,6 +32,16 @@ class PrivacyRepository(private val db: AppDatabase) {
 
     suspend fun saveConfig(config: SecurityConfig) {
         configDao.insertConfig(config)
+    }
+
+    suspend fun verifyPrimaryPin(pin: String): Boolean {
+        val stored = configDao.getConfigDirect()?.hashedPin ?: return false
+        if (!withContext(Dispatchers.Default) { PinCredentials.verify(pin, stored) }) return false
+        if (PinCredentials.isLegacy(stored)) {
+            val upgraded = withContext(Dispatchers.Default) { SecurityUtils.hashPin(pin) }
+            return configDao.replacePin(stored, upgraded) == 1
+        }
+        return configDao.getConfigDirect()?.hashedPin == stored
     }
 
     suspend fun toggleAppLock(packageName: String, isLocked: Boolean) {
