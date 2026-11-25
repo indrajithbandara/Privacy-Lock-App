@@ -24,3 +24,4 @@ rootProject.name = "My Application"
 
 include(":app")
 include(":test-fixture")
+include(":legacy-fixture")

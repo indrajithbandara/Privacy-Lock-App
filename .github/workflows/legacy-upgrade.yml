@@ -1,0 +1,51 @@
+name: Representative APK Upgrade
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  upgrade:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [24, 36]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36.1'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+      - name: Build representative legacy and candidate debug APKs with the same debug key
+        run: |
+          gradle :legacy-fixture:assembleDebug --no-daemon --stacktrace
+          gradle :app:assembleOpensourceDebug :app:assembleOpensourceDebugAndroidTest --no-daemon --stacktrace
+      - name: Enable hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install legacy fixture and update in place without clearing data
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          arch: x86_64
+          target: google_apis
+          disk-size: 4096M
+          disable-animations: true
+          script: bash .github/scripts/test-legacy-apk-upgrade.sh
+      - name: Upload upgrade test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: upgrade-api-${{ matrix.api-level }}
+          path: upgrade-test-results.txt

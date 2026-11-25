@@ -104,13 +104,13 @@ class ForegroundProtectionTest {
     private fun enterPin(pin: String) {
         pin.forEachIndexed { index, digit ->
             eventually("visible keypad digit") {
-                nodes().firstOrNull { it.isVisibleToUser && it.text?.toString() == digit.toString() }?.let(::tapNode) == true
+                nodes().firstOrNull { it.isVisibleToUser && it.text?.toString() == digit.toString() }?.let(::clickNode) == true
             }
             // Let Compose consume the touch and recompose before the next digit.
             SystemClock.sleep(350)
             if (index < pin.lastIndex) {
                 val expected = context.getString(R.string.auth_digits_entered, index + 1)
-                eventually("PIN length indicator") { nodes().any { it.contentDescription?.toString() == expected } }
+                eventually("PIN length indicator ${index + 1}") { hasText(expected) }
                 android.util.Log.i("ForegroundProtectionTest", "Verified keypad length ${index + 1}")
             }
         }

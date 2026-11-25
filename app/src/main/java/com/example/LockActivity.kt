@@ -325,7 +325,6 @@ fun LockScreenContent(
             // PIN Dots Indicators; accessibility exposes the length, never the value.
             val digitStatus = stringResource(R.string.auth_digits_entered, pinBuffer.length)
             Row(
-                modifier = Modifier.semantics { contentDescription = digitStatus },
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -343,6 +342,9 @@ fun LockScreenContent(
                     )
                 }
             }
+
+            Text(digitStatus, style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
 
             Spacer(modifier = Modifier.height(12.dp))
 

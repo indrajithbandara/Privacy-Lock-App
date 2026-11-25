@@ -11,3 +11,7 @@ android {
         versionName = "1"
     }
 }
+
+androidComponents {
+    beforeVariants(selector().withBuildType("release")) { it.enable = false }
+}
