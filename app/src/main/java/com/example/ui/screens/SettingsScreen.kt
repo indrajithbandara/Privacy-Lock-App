@@ -602,8 +602,8 @@ fun SettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Security Configuration Backup", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text(text = "Export or restore secure credentials and locks", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
+                            Text(text = "Appearance Preference Backup", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                            Text(text = "Export or restore theme and keypad vibration preferences only", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
                         }
                         Button(
                             onClick = {
@@ -821,14 +821,14 @@ fun SettingsScreen(
     if (showBackupRestoreDialog) {
         AlertDialog(
             onDismissRequest = { showBackupRestoreDialog = false },
-            title = { Text("Manage Configuration Backup", fontWeight = FontWeight.Bold) },
+            title = { Text("Manage Appearance Preferences", fontWeight = FontWeight.Bold) },
             text = {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        "Exported Backup Key (Keep this secret and secure):",
+                        "Exported appearance preferences:",
                         style = MaterialTheme.typography.bodySmall,
                         color = TextWarmGray
                     )
