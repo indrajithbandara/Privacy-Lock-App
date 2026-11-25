@@ -6,7 +6,7 @@ The release validation workflow builds optimized **unsigned** APK and AAB artifa
 
 ## Authorized signing
 
-The development release candidate is `2.0.0-rc.1` (version code `2`, after the legacy version code `1`). It is not a published production release. Verify the signing identity and an actual upgrade before incrementing/versioning the final public release.
+The development release candidate is `2.0.0-rc.2` (version code `3`, after legacy version code `1` and RC.1 version code `2`). It is not a published production release. Verify the signing identity and an actual upgrade before final public release.
 
 Use the existing production signing key. Configure the Gradle environment variables `KEYSTORE_PATH`, `STORE_PASSWORD`, and `KEY_PASSWORD` in a restricted release environment. The configured key alias is `upload`. Do not commit or disclose the key or passwords. Do not generate a replacement signing identity merely to make a build pass.
 

@@ -14,6 +14,8 @@ import androidx.biometric.BiometricPrompt
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,6 +34,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -265,10 +269,10 @@ fun LockScreenContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
+            .padding(horizontal = 24.dp, vertical = 12.dp)
             .windowInsetsPadding(WindowInsets.safeDrawing),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         // Header Row
         Row(
@@ -293,17 +297,20 @@ fun LockScreenContent(
             Spacer(modifier = Modifier.width(48.dp))
         }
 
-        // App Details and PIN display
+        // The descriptive area can scroll; PIN feedback and keypad have their own
+        // layout space so an authentication failure is not clipped by this weight.
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
-                .weight(1f, fill = false)
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .offset(x = shakeOffset.value.dp)
         ) {
             InstalledAppIcon(
                 packageName = packageName,
-                size = 84,
+                size = 56,
                 backgroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
             )
 
@@ -324,8 +331,13 @@ fun LockScreenContent(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+        }
 
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
             // PIN Dots Indicators; accessibility exposes the length, never the value.
             val digitStatus = stringResource(R.string.auth_digits_entered, pinBuffer.length)
             Row(
@@ -350,17 +362,16 @@ fun LockScreenContent(
             Text(digitStatus, style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-            Spacer(modifier = Modifier.height(12.dp))
-
-            if (retryAfter > 0 || errorMessage != null) {
+            Box(Modifier.fillMaxWidth().heightIn(min = 24.dp), contentAlignment = Alignment.Center) {
+              if (retryAfter > 0 || errorMessage != null) {
                 Text(
                     text = if (retryAfter > 0) stringResource(R.string.auth_retry_seconds, retryAfter) else errorMessage.orEmpty(),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                     color = MaterialTheme.colorScheme.error,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
                 )
-            } else {
-                Spacer(modifier = Modifier.height(20.dp))
+              }
             }
         }
 

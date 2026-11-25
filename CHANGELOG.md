@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0-rc.2] - 2026-11-26
+
+### Fixed
+- Reserve visible layout space for PIN feedback and retry status; the app-details area scrolls independently.
+- Validate the real foreground prompt using activity lifecycle, window focus and rendered UI rather than depending only on the accessibility tree.
+
+### Release status
+- Candidate only. Full foreground unlock/relock regression, physical devices, brand clearance and production signing remain mandatory gates.
+
 ## [1.0.1] - 2026-06-26
 
 ### Added
