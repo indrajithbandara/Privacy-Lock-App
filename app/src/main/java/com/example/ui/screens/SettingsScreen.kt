@@ -19,6 +19,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
@@ -43,7 +45,7 @@ fun SettingsScreen(
     var pendingSecurityChange by remember { mutableStateOf<(() -> Unit)?>(null) }
     val requestSecurityChange: (() -> Unit) -> Unit = { action ->
         if (config?.hashedPin?.isNotEmpty() == true) pendingSecurityChange = action
-        else Toast.makeText(context, "Set up your primary PIN first.", Toast.LENGTH_SHORT).show()
+        else Toast.makeText(context, R.string.settings_pin_first, Toast.LENGTH_SHORT).show()
     }
 
     var showPinSetup by remember { mutableStateOf(false) }
@@ -543,7 +545,7 @@ fun SettingsScreen(
         }
     }
 
-    SecureAuthDialog(isOpen = pendingSecurityChange != null, title = "Confirm security setting", randomizeKeypad = config?.randomizeKeypad == true,
+    SecureAuthDialog(isOpen = pendingSecurityChange != null, title = stringResource(R.string.settings_confirm_security), randomizeKeypad = config?.randomizeKeypad == true,
         isPinConfigured = config?.hashedPin?.isNotEmpty() == true, onVerify = viewModel::verifyPin,
         onDismiss = { pendingSecurityChange = null }, onSuccess = {
             val action = pendingSecurityChange
@@ -579,8 +581,8 @@ fun SettingsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    val setupTitle = "Set Primary 6-Digit PIN"
-                    val setupDesc = "Confirm the new PIN. To change an existing PIN, enter the current one first."
+                    val setupTitle = stringResource(R.string.settings_set_pin)
+                    val setupDesc = stringResource(R.string.settings_pin_instructions)
 
                     Text(
                         text = setupTitle,
@@ -600,7 +602,7 @@ fun SettingsScreen(
                         OutlinedTextField(
                             value = currentPinInput,
                             onValueChange = { if (it.length <= 6 && it.all { ch -> ch in '0'..'9' }) currentPinInput = it },
-                            label = { Text("Current PIN") },
+                            label = { Text(stringResource(R.string.settings_current_pin)) },
                             visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -614,7 +616,7 @@ fun SettingsScreen(
                                 pinSetupError = null
                             }
                         },
-                        placeholder = { Text("Enter 6 digits PIN") },
+                        placeholder = { Text(stringResource(R.string.settings_enter_pin)) },
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
                             keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
                         ),
@@ -628,7 +630,7 @@ fun SettingsScreen(
                     OutlinedTextField(
                         value = confirmPinInput,
                         onValueChange = { if (it.length <= 6 && it.all { ch -> ch in '0'..'9' }) confirmPinInput = it },
-                        label = { Text("Confirm new PIN") },
+                        label = { Text(stringResource(R.string.settings_confirm_pin)) },
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -656,7 +658,7 @@ fun SettingsScreen(
                         Button(
                             onClick = {
                                 if (pinSetupInput.length != 6 || pinSetupInput != confirmPinInput) {
-                                    pinSetupError = "Enter matching six-digit PINs."
+                                    pinSetupError = context.getString(R.string.settings_pin_matching)
                                 } else if (!savingPin) {
                                     savingPin = true
                                     viewModel.setupPin(currentPinInput, pinSetupInput) { success ->
@@ -666,9 +668,9 @@ fun SettingsScreen(
                                             pinSetupInput = ""
                                             confirmPinInput = ""
                                             showPinSetup = false
-                                            Toast.makeText(context, "PIN saved", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, R.string.settings_pin_saved, Toast.LENGTH_SHORT).show()
                                         } else {
-                                            pinSetupError = "Unable to update PIN. Check the current PIN."
+                                            pinSetupError = context.getString(R.string.settings_pin_update_failed)
                                         }
                                     }
                                 }

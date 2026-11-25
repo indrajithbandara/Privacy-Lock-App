@@ -24,6 +24,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
+import com.example.R
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -172,6 +178,7 @@ fun SecureKeypad(
             horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally)
         ) {
             // Clear Button
+            val clearDescription = stringResource(R.string.auth_clear)
             IconButton(
                 onClick = {
                     triggerVibration()
@@ -181,6 +188,7 @@ fun SecureKeypad(
                     .weight(1f)
                     .height(64.dp)
                     .clip(CircleShape)
+                    .semantics { contentDescription = clearDescription }
                     .testTag("keypad_btn_clear")
             ) {
                 Text(
@@ -215,7 +223,7 @@ fun SecureKeypad(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Backspace,
-                    contentDescription = "Delete",
+                    contentDescription = stringResource(R.string.auth_delete),
                     tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     modifier = Modifier.size(24.dp)
                 )
@@ -234,7 +242,7 @@ fun KeypadButton(
             .height(64.dp)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
-            .clickable(onClick = onClick)
+            .clickable(role = Role.Button, onClick = onClick)
             .testTag("keypad_btn_$text"),
         contentAlignment = Alignment.Center
     ) {
@@ -265,6 +273,7 @@ fun SecureAuthDialog(
     onSuccess: () -> Unit
 ) {
     if (!isOpen) return
+    val context = LocalContext.current
 
     val verifyScope = rememberCoroutineScope()
     var verifying by remember { mutableStateOf(false) }
@@ -316,7 +325,7 @@ fun SecureAuthDialog(
                         errorMessage = null
                         onDismiss()
                     }) {
-                        Icon(Icons.Default.Close, contentDescription = "Close auth screen")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.auth_close))
                     }
 
                     Icon(
@@ -346,7 +355,7 @@ fun SecureAuthDialog(
                     )
 
                     Text(
-                        text = if (isPinConfigured) "Enter your primary PIN" else "No PIN is configured. Set one up in Settings.",
+                        text = if (isPinConfigured) stringResource(R.string.auth_primary_pin) else stringResource(R.string.auth_no_pin),
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (isPinConfigured) TextWarmGray else MaterialTheme.colorScheme.primary,
                         textAlign = TextAlign.Center
@@ -354,8 +363,10 @@ fun SecureAuthDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // PIN Dots indicators
+                    // PIN Dots indicators; accessibility exposes only the number of entered digits.
+                    val digitStatus = stringResource(R.string.auth_digits_entered, pinBuffer.length)
                     Row(
+                        modifier = Modifier.semantics { stateDescription = digitStatus },
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -378,7 +389,7 @@ fun SecureAuthDialog(
 
                     if (retryAfter > 0 || errorMessage != null) {
                         Text(
-                            text = if (retryAfter > 0) "Try again in ${retryAfter}s." else errorMessage.orEmpty(),
+                            text = if (retryAfter > 0) stringResource(R.string.auth_retry_seconds, retryAfter) else errorMessage.orEmpty(),
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                             color = MaterialTheme.colorScheme.error,
                             textAlign = TextAlign.Center
@@ -408,7 +419,7 @@ fun SecureAuthDialog(
                                             onSuccess()
                                         } else {
                                             retryAfter = result.substringAfter("LOCKED:", "0").toLongOrNull() ?: 0L
-                                            errorMessage = "Authentication denied."
+                                            errorMessage = context.getString(R.string.auth_denied)
                                         }
                                     } finally {
                                         verifying = false

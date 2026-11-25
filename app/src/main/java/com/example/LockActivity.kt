@@ -29,6 +29,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -164,7 +167,7 @@ class LockActivity : FragmentActivity() {
         )
         if (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS) {
             val cipher = com.example.security.BiometricKey.newAuthenticationCipher() ?: run {
-                android.widget.Toast.makeText(this, "Biometric key unavailable. Use your PIN and re-enroll biometrics in Settings.", android.widget.Toast.LENGTH_LONG).show()
+                android.widget.Toast.makeText(this, R.string.auth_biometric_missing, android.widget.Toast.LENGTH_LONG).show()
                 return
             }
             val executor = ContextCompat.getMainExecutor(this)
@@ -193,9 +196,9 @@ class LockActivity : FragmentActivity() {
             })
 
             val promptInfo = BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Unlock $appName")
-                .setSubtitle("Authenticate to access locked application")
-                .setNegativeButtonText("Use PIN")
+                .setTitle(getString(R.string.auth_unlock_app, appName))
+                .setSubtitle(getString(R.string.auth_subtitle))
+                .setNegativeButtonText(getString(R.string.auth_use_pin))
                 .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
                 .build()
 
@@ -275,7 +278,7 @@ fun LockScreenContent(
                 onClick = onCancel,
                 modifier = Modifier.testTag("lock_close_button")
             ) {
-                Icon(Icons.Default.Close, contentDescription = "Cancel and go home")
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.auth_cancel_home))
             }
 
             Icon(
@@ -303,7 +306,7 @@ fun LockScreenContent(
             )
 
             Text(
-                text = "$appName is Locked",
+                text = stringResource(R.string.auth_app_locked, appName),
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
@@ -313,7 +316,7 @@ fun LockScreenContent(
             )
 
             Text(
-                text = "Enter secure 6-digit privacy PIN to access",
+                text = stringResource(R.string.auth_enter_six),
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextWarmGray,
                 textAlign = TextAlign.Center
@@ -321,8 +324,10 @@ fun LockScreenContent(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // PIN Dots Indicators
+            // PIN Dots Indicators; accessibility exposes the length, never the value.
+            val digitStatus = stringResource(R.string.auth_digits_entered, pinBuffer.length)
             Row(
+                modifier = Modifier.semantics { stateDescription = digitStatus },
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -345,7 +350,7 @@ fun LockScreenContent(
 
             if (retryAfter > 0 || errorMessage != null) {
                 Text(
-                    text = if (retryAfter > 0) "Try again in ${retryAfter}s." else errorMessage.orEmpty(),
+                    text = if (retryAfter > 0) stringResource(R.string.auth_retry_seconds, retryAfter) else errorMessage.orEmpty(),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                     color = MaterialTheme.colorScheme.error,
                     textAlign = TextAlign.Center
@@ -367,12 +372,12 @@ fun LockScreenContent(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Fingerprint,
-                        contentDescription = "Authenticate with fingerprint or face",
+                        contentDescription = stringResource(R.string.auth_biometric_description),
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        "Verify with Biometrics",
+                        stringResource(R.string.auth_biometric_verify),
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
                     )
                 }
@@ -398,7 +403,7 @@ fun LockScreenContent(
                                     } else {
                                         shakeTrigger++
                                         retryAfter = result.retryAfterSeconds
-                                        errorMessage = "Authentication denied."
+                                        errorMessage = context.getString(R.string.auth_denied)
                                     }
                                 } finally {
                                     verifying = false
@@ -429,7 +434,7 @@ fun LockScreenContent(
                     modifier = Modifier.padding(bottom = 12.dp)
                 ) {
                     Text(
-                        "Use enrolled biometrics",
+                        stringResource(R.string.auth_use_biometric),
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium)
                     )
