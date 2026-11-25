@@ -46,6 +46,9 @@ interface SecurityConfigDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertConfig(config: SecurityConfig)
+
+    @Query("UPDATE security_config SET hashedPin = :replacement WHERE id = 'global' AND hashedPin = :expected")
+    suspend fun replacePin(expected: String, replacement: String): Int
 }
 
 @Dao
