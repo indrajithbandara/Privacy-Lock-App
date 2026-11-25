@@ -102,7 +102,7 @@ fun SettingsScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = "Primary Vault PIN", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                             Text(
-                                text = if (config?.hashedPin?.isNotEmpty() == true) "Secure 6-digit PIN configured" else "Default PIN (123456) active. Setup required.",
+                                text = if (config?.hashedPin?.isNotEmpty() == true) "6-digit PIN configured" else "No PIN configured. Setup required.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (config?.hashedPin?.isNotEmpty() == true) SoftGreenAccent else MutedRedAccent
                             )
