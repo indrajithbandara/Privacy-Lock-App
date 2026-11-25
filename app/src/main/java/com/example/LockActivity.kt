@@ -144,9 +144,10 @@ class LockActivity : FragmentActivity() {
     }
 
     private fun showBiometricPrompt() {
+        if (securityConfig?.biometricsEnabled != true || securityConfig?.hashedPin.isNullOrEmpty()) return
         val biometricManager = BiometricManager.from(this)
         val canAuthenticate = biometricManager.canAuthenticate(
-            BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
+            BiometricManager.Authenticators.BIOMETRIC_STRONG
         )
         if (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS) {
             val executor = ContextCompat.getMainExecutor(this)
@@ -169,6 +170,7 @@ class LockActivity : FragmentActivity() {
                 .setTitle("Unlock $appName")
                 .setSubtitle("Authenticate to access locked application")
                 .setNegativeButtonText("Use PIN")
+                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
                 .build()
 
             biometricPrompt.authenticate(promptInfo)
@@ -342,26 +344,12 @@ fun LockScreenContent(
                         pinBuffer += num
 
                         if (pinBuffer.length == 6) {
-                            val targetHash = if (config.hashedPin.isEmpty()) {
-                                SecurityUtils.hashPin("123456")
-                            } else {
-                                config.hashedPin
-                            }
-                            val decoyHash = config.hashedDecoyPin
-                            val panicHash = config.hashedPanicPin
+                            val targetHash = config.hashedPin
                             val inputHash = SecurityUtils.hashPin(pinBuffer)
 
                             when {
-                                inputHash == targetHash -> {
+                                targetHash.isNotEmpty() && inputHash == targetHash -> {
                                     onUnlockSuccess()
-                                }
-                                decoyHash.isNotEmpty() && inputHash == decoyHash -> {
-                                    // Decoy PIN unlocks silently but puts it in decoy state
-                                    onUnlockSuccess()
-                                }
-                                panicHash.isNotEmpty() && inputHash == panicHash -> {
-                                    // Panic PIN triggers emergency exit or safety close
-                                    onCancel()
                                 }
                                 else -> {
                                     // Log Intruder Attempt asynchronously in background
