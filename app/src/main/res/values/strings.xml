@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name" translatable="false">Privacy Lock</string>
+    <string name="product_name" translatable="false">Privacy Lock</string>
+    <string name="product_tagline" translatable="false">Your apps. Your boundaries.</string>
     <string name="accessibility_service_description">Uses accessibility window events and package identifiers to request authentication for selected apps. Does not read window content. You can revoke this permission at any time.</string>
     <string name="nav_apps">Apps</string>
     <string name="nav_center">Center</string>

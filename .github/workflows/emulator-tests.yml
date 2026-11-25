@@ -36,8 +36,11 @@ jobs:
           api-level: ${{ matrix.api-level }}
           arch: x86_64
           target: google_apis
+          disk-size: 4096M
           disable-animations: true
-          script: gradle :app:connectedOpensourceDebugAndroidTest --no-daemon --stacktrace
+          script: |
+            adb shell df -h /data
+            gradle :app:connectedOpensourceDebugAndroidTest --no-daemon --stacktrace
       - name: Upload device test reports
         if: always()
         uses: actions/upload-artifact@v4

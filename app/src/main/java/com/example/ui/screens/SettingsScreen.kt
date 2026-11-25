@@ -521,7 +521,8 @@ fun SettingsScreen(
             Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.about), style = MaterialTheme.typography.titleLarge)
-                    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.product_name), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.product_tagline), style = MaterialTheme.typography.bodyMedium)
                     Text(stringResource(R.string.version_text, com.example.BuildConfig.VERSION_NAME))
                     Text(stringResource(R.string.privacy_summary), style = MaterialTheme.typography.bodyMedium)
                     Text(stringResource(R.string.accessibility_disclosure), style = MaterialTheme.typography.bodySmall)
