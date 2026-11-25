@@ -27,8 +27,8 @@ jobs:
           gradle-version: '9.3.1'
       - name: Build representative legacy and candidate debug APKs with the same debug key
         run: |
-          gradle :legacy-fixture:assembleDebug --no-daemon --stacktrace
-          gradle :app:assembleOpensourceDebug :app:assembleOpensourceDebugAndroidTest --no-daemon --stacktrace
+          bash .github/scripts/gradle-build-retry.sh :legacy-fixture:assembleDebug --no-daemon --stacktrace
+          bash .github/scripts/gradle-build-retry.sh :app:assembleOpensourceDebug :app:assembleOpensourceDebugAndroidTest --no-daemon --stacktrace
       - name: Enable hardware acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
