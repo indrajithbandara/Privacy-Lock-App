@@ -60,18 +60,8 @@ class PrivacyRepository(private val db: AppDatabase) {
         )
     }
 
-    suspend fun logIntruderSelfie(failedPinAttempt: String, avatarId: Int) {
-        val maskedAttempt = "*".repeat(failedPinAttempt.length).ifEmpty { "None" }
-        selfieDao.insertSelfie(
-            IntruderSelfie(
-                failedPinAttempt = maskedAttempt,
-                avatarId = avatarId
-            )
-        )
-        logEvent(
-            type = "INTRUDER",
-            description = "Intruder attempt blocked! Masked entry: '$maskedAttempt'. Secure capture recorded."
-        )
+    suspend fun logAuthenticationFailure(appName: String? = null) {
+        logEvent("AUTH_FAILURE", "Incorrect PIN entered.", appName)
     }
 
     suspend fun deleteIntruderSelfie(id: Int) {
