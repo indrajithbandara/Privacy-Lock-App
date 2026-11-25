@@ -44,6 +44,9 @@ interface SecurityConfigDao {
     @Query("SELECT * FROM security_config WHERE id = 'global'")
     suspend fun getConfigDirect(): SecurityConfig?
 
+    @Query("SELECT * FROM security_config ORDER BY id")
+    suspend fun getAllConfigsDirect(): List<SecurityConfig>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertConfig(config: SecurityConfig)
 
@@ -56,6 +59,9 @@ interface TimelineEventDao {
     @Query("SELECT * FROM timeline_events ORDER BY timestamp DESC LIMIT 100")
     fun getEvents(): Flow<List<TimelineEvent>>
 
+    @Query("SELECT * FROM timeline_events ORDER BY id")
+    suspend fun getAllEventsDirect(): List<TimelineEvent>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertEvent(event: TimelineEvent)
 
@@ -67,6 +73,9 @@ interface TimelineEventDao {
 interface IntruderSelfieDao {
     @Query("SELECT * FROM intruder_selfies ORDER BY timestamp DESC")
     fun getSelfies(): Flow<List<IntruderSelfie>>
+
+    @Query("SELECT * FROM intruder_selfies ORDER BY id")
+    suspend fun getAllSelfiesDirect(): List<IntruderSelfie>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSelfie(selfie: IntruderSelfie)
