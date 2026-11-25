@@ -197,6 +197,7 @@ fun LockScreenContent(
     onTriggerBiometric: () -> Unit
 ) {
     var pinBuffer by remember { mutableStateOf("") }
+    var verifying by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -339,33 +340,27 @@ fun LockScreenContent(
 
             SecureKeypad(
                 onNumberClick = { num ->
-                    if (pinBuffer.length < 6) {
+                    if (!verifying && pinBuffer.length < 6) {
                         errorMessage = null
                         pinBuffer += num
 
                         if (pinBuffer.length == 6) {
-                            val targetHash = config.hashedPin
-                            val inputHash = SecurityUtils.hashPin(pinBuffer)
-
-                            when {
-                                targetHash.isNotEmpty() && inputHash == targetHash -> {
-                                    onUnlockSuccess()
-                                }
-                                else -> {
-                                    // Log Intruder Attempt asynchronously in background
-                                    coroutineScope.launch(Dispatchers.IO) {
-                                        val db = AppDatabase.getDatabase(context)
-                                        db.timelineEventDao().insertEvent(
-                                            com.example.data.TimelineEvent(
-                                                type = "AUTH_FAILURE",
-                                                description = "Incorrect PIN entered.",
-                                                appName = appName
-                                            )
-                                        )
+                            val submitted = pinBuffer
+                            pinBuffer = ""
+                            verifying = true
+                            coroutineScope.launch {
+                                try {
+                                    val db = AppDatabase.getDatabase(context)
+                                    val repository = com.example.data.PrivacyRepository(db)
+                                    if (repository.verifyPrimaryPin(submitted)) {
+                                        onUnlockSuccess()
+                                    } else {
+                                        repository.logAuthenticationFailure(appName)
+                                        shakeTrigger++
+                                        errorMessage = "Incorrect security PIN. Access denied."
                                     }
-                                    pinBuffer = ""
-                                    shakeTrigger++
-                                    errorMessage = "Incorrect security PIN. Access denied."
+                                } finally {
+                                    verifying = false
                                 }
                             }
                         }
