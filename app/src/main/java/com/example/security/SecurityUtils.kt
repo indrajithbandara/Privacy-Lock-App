@@ -15,15 +15,10 @@ object SecurityUtils {
      * Hashes a PIN or Password using SHA-256 with a local salt.
      */
     fun hashPin(pin: String, salt: String = "PrivacyLockSaltEnterprise"): String {
-        return try {
-            val digest = MessageDigest.getInstance("SHA-256")
-            val combined = pin + salt
-            val hashBytes = digest.digest(combined.toByteArray(Charsets.UTF_8))
-            hashBytes.joinToString("") { "%02x".format(it) }
-        } catch (e: Exception) {
-            // Safe fallback (never crash the app, but log or handle gracefully)
-            pin.hashCode().toString()
-        }
+        val digest = MessageDigest.getInstance("SHA-256")
+        val combined = pin + salt
+        val hashBytes = digest.digest(combined.toByteArray(Charsets.UTF_8))
+        return hashBytes.joinToString("") { "%02x".format(it) }
     }
 
     /**
