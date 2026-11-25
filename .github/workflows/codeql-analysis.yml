@@ -31,6 +31,8 @@ jobs:
 
     - name: Set up Android SDK
       uses: android-actions/setup-android@v3
+      with:
+        packages: 'platform-tools platforms;android-36.1'
 
     - name: Setup Gradle Cache
       uses: gradle/actions/setup-gradle@v4
