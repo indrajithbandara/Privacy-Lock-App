@@ -45,7 +45,7 @@ object AppLockManager {
         return try {
             val pm = context.packageManager
             val info = pm.getApplicationInfo(packageName, 0)
-            if (info.flags and ApplicationInfo.FLAG_SYSTEM != 0) return false
+            if ((info.flags and ApplicationInfo.FLAG_SYSTEM) != 0) return false
             if (pm.getLaunchIntentForPackage(packageName) == null) return false
             val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
             pm.queryIntentActivities(home, PackageManager.MATCH_DEFAULT_ONLY)
