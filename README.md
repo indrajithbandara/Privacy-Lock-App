@@ -1,5 +1,7 @@
 # Privacy Lock
 
+> **Development status — not production-ready.** Existing releases and screenshots may reflect prototype behavior. The local database is not yet encrypted, and authentication and app-lock lifecycle hardening are incomplete. Do not rely on Privacy Lock as an operating-system security boundary. See the [security findings register](docs/security-baseline.md) for outstanding release blockers.
+
 <p align="center">
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/home.png" alt="Privacy Lock Dashboard" width="220" style="border-radius: 20px; margin: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);" />
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/lock_screen.png" alt="Privacy Lock Keypad Overlay" width="220" style="border-radius: 20px; margin: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);" />
