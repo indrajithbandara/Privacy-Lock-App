@@ -288,6 +288,14 @@ fun SecureAuthDialog(
 
     val verifyScope = rememberCoroutineScope()
     var verifying by remember { mutableStateOf(false) }
+    var retryAfter by remember { mutableStateOf(0L) }
+    LaunchedEffect(retryAfter) {
+        if (retryAfter > 0) {
+            kotlinx.coroutines.delay(1000)
+            retryAfter--
+        }
+    }
+
     var pinBuffer by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var attemptsCount by remember { mutableStateOf(0) }
@@ -401,9 +409,9 @@ fun SecureAuthDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    if (errorMessage != null) {
+                    if (retryAfter > 0 || errorMessage != null) {
                         Text(
-                            text = errorMessage!!,
+                            text = if (retryAfter > 0) "Try again in ${retryAfter}s." else errorMessage.orEmpty(),
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                             color = MaterialTheme.colorScheme.error,
                             textAlign = TextAlign.Center
@@ -416,7 +424,7 @@ fun SecureAuthDialog(
                 // Keypad Section
                 SecureKeypad(
                     onNumberClick = { num ->
-                        if (!verifying && pinBuffer.length < 6) {
+                        if (!verifying && retryAfter == 0L && pinBuffer.length < 6) {
                             errorMessage = null
                             pinBuffer += num
 
@@ -432,7 +440,8 @@ fun SecureAuthDialog(
                                             errorMessage = null
                                             onSuccess()
                                         } else {
-                                            errorMessage = if (result.startsWith("LOCKED:")) "Try again in ${result.substringAfter(':')}s." else "Authentication denied."
+                                            retryAfter = result.substringAfter("LOCKED:", "0").toLongOrNull() ?: 0L
+                                            errorMessage = "Authentication denied."
                                         }
                                     } finally {
                                         verifying = false
