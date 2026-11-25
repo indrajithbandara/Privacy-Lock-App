@@ -1,55 +1,13 @@
-# Release Process and Signing Guidelines
+# Release process
 
-This document details the official release process, semantic versioning guidelines, continuous delivery pipeline executions, and cryptographic signing mechanisms for the **Privacy Lock** project.
+No release may be published until the applicable build, lint, unit, instrumentation, dependency and CodeQL checks pass on the exact release commit and the outstanding critical/high security findings are resolved.
 
----
+The release validation workflow builds optimized **unsigned** APK and AAB artifacts for both distribution flavors, generates SHA-256 checksums, and uploads them for validation only. It does not publish a release.
 
-## 📐 1. Semantic Versioning & Tagging
+## Authorized signing
 
-Privacy Lock strictly adheres to **Semantic Versioning 2.0.0** (SemVer):
-`MAJOR.MINOR.PATCH` (e.g., `1.1.2`)
+Use the existing production signing key. Configure the Gradle environment variables `KEYSTORE_PATH`, `STORE_PASSWORD`, and `KEY_PASSWORD` in a restricted release environment. The configured key alias is `upload`. Do not commit or disclose the key or passwords. Do not generate a replacement signing identity merely to make a build pass.
 
-*   **MAJOR**: Incremented when backward-incompatible API changes or structural storage upgrades are introduced.
-*   **MINOR**: Incremented when new, backward-compatible features are added (e.g., Decoy PIN modes, pattern locks).
-*   **PATCH**: Incremented when backward-compatible bug fixes or security hotfixes are merged.
+After signing, verify each APK with Android SDK `apksigner verify --verbose --print-certs` and compare the certificate fingerprint against the known existing signing identity. Verify the signed AAB with appropriate Java/Android signing tools. Validate SHA-256 checksums, version code/name and update compatibility.
 
----
-
-## 🤖 2. Release Automation Workflow
-
-Our CI/CD pipeline (managed via GitHub Actions) automates the compilation, signing, checksum generation, and publishing processes when a new git tag is pushed.
-
-```
-┌─────────────────┐      ┌──────────────┐      ┌─────────────────────────┐
-│  Git Tag Push   │ ───> │ GitHub CI/CD │ ───> │  Auto-generated Draft   │
-│   (e.g., v1.1.0) │      │  Runner Base │      │   GitHub Release Assets │
-└─────────────────┘      └──────────────┘      └─────────────────────────┘
-```
-
-### Steps Executed in CI/CD Release Phase:
-1.  **Checkout & Dependencies**: Cleans workspace, checks out release tag, and sets up JDK 21.
-2.  **Lint & Test Verification**: Runs unit, Robolectric, and Roborazzi screenshot verification tasks. If any check fails, the release build aborts instantly.
-3.  **Compilation**: Builds release targets for both product flavors:
-    *   `opensource` Release APK
-    *   `play` Release App Bundle (AAB)
-4.  **Signing**:
-    *   Injects the base64-encoded upload keystore from GitHub secrets (`RELEASE_KEYSTORE_BASE64`) into a transient `.jks` file.
-    *   Signs compile outputs using standard Android `apksigner` and `jarsigner` with store and key passwords stored in secrets.
-5.  **Checksum Generation**: Computes SHA-256 checksums for both output packages to enable binary tampering audits:
-    ```bash
-    sha256sum app-opensource-release.apk > app-opensource-release.apk.sha256
-    ```
-6.  **Draft Release Creation**: Creates a new Draft Release in the GitHub repository, uploads signed binaries, SHA-256 checksum sheets, and parses standard git logs to generate changelog drafts.
-
----
-
-## 🔒 3. Manual Verification & Distribution
-
-Once the release workflow completes successfully, repository administrators execute the final publishing steps:
-
-1.  **Checksum Audit**: Verify that the generated SHA-256 signatures match locally compiled binaries exactly.
-2.  **Review Release Notes**: Polishing the draft release notes, formatting categorized headings: `🚀 Added`, `🐛 Fixed`, `🔒 Security`.
-3.  **Publish Release**: Click **Publish Release** in the GitHub interface, making the release assets public.
-4.  **Open Source Syncing**:
-    *   **IzzyOnDroid / Obtainium**: Updates will propagate automatically as indexing scripts scan the new release tag.
-    *   **F-Droid**: F-Droid builders detect the new tag within 24-72 hours, rebuild from the tag source, sign using F-Droid's official keys, and deploy to the main index.
+Publish only verified signed artifacts and accurate release notes after all gates pass. Keep unsigned and debug artifacts out of production releases. Google Play and F-Droid approval are separate external processes.

@@ -55,3 +55,11 @@ Android accessibility-based overlays are not an operating-system security bounda
 - Added an unsigned optimized release validation workflow and artifact checksums; no production signing keys or release publication are assumed.
 - CodeQL default setup reports a Kotlin error and rejects advanced workflow SARIF. Switching configurations requires a repository setting change; the advanced workflow remains in place. Dependency Review passed, secret scanning and push protection are enabled. Do not bypass required security checks.
 - The final rebranding remains gated on current build/security results. Localization scope was reintroduced by the latest directive; reviewed translations have not been implemented.
+
+## Validation and security follow-up
+
+At commit `56a2582c65385cb453efe790e783378fbae5f91c` all five PR workflows completed successfully: Android CI (212), dependency review (56), unsigned release validation (4), emulator matrix API 24/36 (22, after retry), and advanced CodeQL (82, after repository configuration migration). CodeQL reports successful SARIF upload; successful execution alone does not establish absence of alerts.
+
+Subsequent commits add PIN authorization before sensitive settings changes, transaction-based updates to avoid stale configuration overwrites, and an end-to-end upgrade test covering an interrupted migration, persisted key, data preservation, legacy cleanup and missing key rejection. The test is pending execution on the new commit. Dead decoy and panic configuration methods have been removed, while legacy database columns remain for data migration compatibility. Sinhala and Tamil translations are initially provided for dashboard, navigation, startup and security-events surfaces; other screens and linguistic review are outstanding.
+
+Repository name lookup for `indrajithbandara/Untouched` returned not found with the configured GitHub account; the name appears available but this is not a trademark clearance. Public rebranding and repository rename remain gated on final validation and brand review.
