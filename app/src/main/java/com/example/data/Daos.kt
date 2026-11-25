@@ -31,6 +31,9 @@ interface LockedAppDao {
 
     @Query("SELECT * FROM locked_apps")
     suspend fun getAllAppsDirect(): List<LockedApp>
+
+    @Query("DELETE FROM locked_apps WHERE packageName = :packageName")
+    suspend fun deleteApp(packageName: String)
 }
 
 @Dao
