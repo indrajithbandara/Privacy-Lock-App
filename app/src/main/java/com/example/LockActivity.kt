@@ -153,8 +153,12 @@ class LockActivity : FragmentActivity() {
 
     private fun unlockApp() {
         if (isFinishing || isDestroyed) return
-        AppLockManager.grantForegroundSession(targetPackageName)
-        finish()
+        if (AppLockManager.grantForegroundSession(targetPackageName)) {
+            finish()
+        } else {
+            // A stale or disconnected request must not reveal the underlying app.
+            goHomeAndFinish()
+        }
     }
 
     private fun showBiometricPrompt() {

@@ -8,10 +8,13 @@ import android.view.accessibility.AccessibilityNodeInfo
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.click
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.data.AppDatabase
 import com.example.data.PrivacyRepository
@@ -81,9 +84,13 @@ class ForegroundProtectionTest {
     private fun changeServiceThroughSettings(enable: Boolean) {
         if (SecurityUtils.isAccessibilityServiceEnabled(context) == enable) return
         if (enable) {
-            shell("am start -W -n ${context.packageName}/com.example.MainActivity")
-            eventually("app accessibility disclosure", 30_000) { clickText(context.getString(R.string.accessibility_settings)) }
-            eventually("affirmative app consent") { clickText(context.getString(R.string.accessibility_consent_open)) }
+            ActivityScenario.launch(MainActivity::class.java).use {
+                val disclosure = context.getString(R.string.accessibility_settings)
+                compose.waitUntil(timeoutMillis = 30_000) { compose.onAllNodesWithText(disclosure).fetchSemanticsNodes().isNotEmpty() }
+                compose.onNodeWithText(disclosure).assertIsDisplayed().performClick()
+                compose.onNodeWithText(context.getString(R.string.accessibility_consent_open)).assertIsDisplayed().performClick()
+                eventually("system settings opened") { nodes().any { it.packageName?.toString() == "com.android.settings" } }
+            }
         } else launchSettings()
         val name = context.getString(R.string.app_name)
         eventually("accessibility settings service list") {
