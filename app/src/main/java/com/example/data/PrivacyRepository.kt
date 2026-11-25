@@ -5,6 +5,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.example.security.AppLockManager
 import com.example.security.AuthenticationGate
 import com.example.security.AuthenticationResult
 import com.example.security.PinCredentials
@@ -77,7 +78,7 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
     }
 
     suspend fun toggleAppLock(packageName: String, isLocked: Boolean) {
-        if (isLocked && getConfigDirect().hashedPin.isEmpty()) return
+        if (isLocked && (getConfigDirect().hashedPin.isEmpty() || !AppLockManager.canProtect(context, packageName))) return
         appDao.updateAppLockStatus(packageName, isLocked)
         val app = appDao.getApp(packageName)
         val status = if (isLocked) "locked" else "unlocked"
