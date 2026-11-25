@@ -163,16 +163,28 @@ class LockActivity : FragmentActivity() {
             BiometricManager.Authenticators.BIOMETRIC_STRONG
         )
         if (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS) {
+            val cipher = com.example.security.BiometricKey.newAuthenticationCipher() ?: run {
+                android.widget.Toast.makeText(this, "Biometric key unavailable. Use your PIN and re-enroll biometrics in Settings.", android.widget.Toast.LENGTH_LONG).show()
+                return
+            }
             val executor = ContextCompat.getMainExecutor(this)
             activePrompt?.cancelAuthentication()
             val biometricPrompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
+                    activePrompt = null
                 }
 
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
-                    unlockApp()
+                    activePrompt = null
+                    try {
+                        val authorizedCipher = result.cryptoObject?.cipher ?: return
+                        authorizedCipher.doFinal(byteArrayOf(1))
+                        unlockApp()
+                    } catch (_: Exception) {
+                        // The PIN remains available; a failed cryptographic operation is never success.
+                    }
                 }
 
                 override fun onAuthenticationFailed() {
@@ -188,7 +200,7 @@ class LockActivity : FragmentActivity() {
                 .build()
 
             activePrompt = biometricPrompt
-            biometricPrompt.authenticate(promptInfo)
+            biometricPrompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
         }
     }
 

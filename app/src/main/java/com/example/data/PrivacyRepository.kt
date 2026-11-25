@@ -63,6 +63,7 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
                 configDao.replacePin(stored, replacement) == 1
             }
             if (result.attempted && !result.accepted) logAuthenticationFailure()
+            if (result.accepted) AppLockManager.clearTemporaryUnlocks()
             return result.accepted
         }
         val replacement = withContext(Dispatchers.Default) { SecurityUtils.hashPin(newPin) }

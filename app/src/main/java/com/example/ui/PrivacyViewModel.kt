@@ -263,12 +263,24 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
     /**
      * Updates biometrics enabled preference.
      */
-    fun setBiometricsEnabled(enabled: Boolean) {
+    fun setBiometricsEnabled(enabled: Boolean, onResult: (Boolean) -> Unit) {
         viewModelScope.launch {
-            val current = repository.getConfigDirect()
-            repository.saveConfig(current.copy(biometricsEnabled = enabled))
-            val desc = if (enabled) "Biometric authentication activated." else "Biometric authentication deactivated."
-            repository.logEvent("CONFIG", desc)
+            try {
+                val current = repository.getConfigDirect()
+                if (enabled) {
+                    check(current.hashedPin.isNotEmpty())
+                    check(androidx.biometric.BiometricManager.from(getApplication<Application>())
+                        .canAuthenticate(androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG) == androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS)
+                    withContext(Dispatchers.IO) { com.example.security.BiometricKey.enroll() }
+                } else {
+                    withContext(Dispatchers.IO) { com.example.security.BiometricKey.remove() }
+                }
+                repository.saveConfig(current.copy(biometricsEnabled = enabled))
+                repository.logEvent("CONFIG", if (enabled) "Biometric authentication enabled." else "Biometric authentication disabled.")
+                onResult(true)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) { onResult(false) }
         }
     }
 

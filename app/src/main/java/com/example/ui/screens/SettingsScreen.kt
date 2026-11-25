@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.data.SecurityConfig
 import com.example.ui.PrivacyViewModel
+import com.example.ui.components.SecureAuthDialog
 import com.example.ui.theme.*
 
 @Composable
@@ -39,6 +40,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     LaunchedEffect(Unit) { viewModel.loadEventRetention() }
     var pendingRetention by remember { mutableStateOf<Int?>(null) }
+    var pendingBiometric by remember { mutableStateOf<Boolean?>(null) }
 
     var showPinSetup by remember { mutableStateOf(false) }
     var currentPinInput by remember { mutableStateOf("") }
@@ -145,13 +147,14 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(text = "Biometric Authentication", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text(text = "Fingerprint / Face Unlock bypass", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
+                            Text(text = "Strong biometric authentication; PIN required to change enrollment", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
                         }
                         val biometricEnabled = config?.biometricsEnabled == true
                         Switch(
                             checked = biometricEnabled,
+                            enabled = config?.hashedPin?.isNotEmpty() == true,
                             onCheckedChange = { enabled ->
-                                viewModel.setBiometricsEnabled(enabled)
+                                pendingBiometric = enabled
                             },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
@@ -531,6 +534,15 @@ fun SettingsScreen(
             }
         }
     }
+
+    SecureAuthDialog(isOpen = pendingBiometric != null, title = "Confirm biometric setting", randomizeKeypad = config?.randomizeKeypad == true,
+        isPinConfigured = config?.hashedPin?.isNotEmpty() == true, onVerify = viewModel::verifyPin,
+        onDismiss = { pendingBiometric = null }, onSuccess = {
+            pendingBiometric?.let { enabled -> viewModel.setBiometricsEnabled(enabled) { success ->
+                if (!success) Toast.makeText(context, "Strong biometrics unavailable. Use your PIN.", Toast.LENGTH_LONG).show()
+            } }
+            pendingBiometric = null
+        })
 
     pendingRetention?.let { limit ->
         AlertDialog(onDismissRequest = { pendingRetention = null }, title = { Text("Change event retention?") },
