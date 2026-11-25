@@ -31,12 +31,13 @@ class PrivacyRepository(private val db: AppDatabase) {
     }
 
     suspend fun toggleAppLock(packageName: String, isLocked: Boolean) {
+        if (isLocked && getConfigDirect().hashedPin.isEmpty()) return
         appDao.updateAppLockStatus(packageName, isLocked)
         val app = appDao.getApp(packageName)
         val status = if (isLocked) "locked" else "unlocked"
         logEvent(
             type = "CONFIG",
-            description = "Simulated application '${app?.name ?: packageName}' has been $status.",
+            description = "Protection preference for '${app?.name ?: packageName}' changed to $status.",
             appName = app?.name
         )
     }
@@ -127,7 +128,7 @@ class PrivacyRepository(private val db: AppDatabase) {
         val installedApps = try {
             pm.getInstalledApplications(android.content.pm.PackageManager.GET_META_DATA)
         } catch (e: Exception) {
-            emptyList()
+            return
         }
 
         val currentAppsMap = appDao.getAllAppsDirect().associateBy { it.packageName }
@@ -161,31 +162,18 @@ class PrivacyRepository(private val db: AppDatabase) {
             )
         }
 
-        // Include simulated defaults if they are not already there (so the interactive sandbox works seamlessly)
-        val defaults = listOf(
-            LockedApp("com.whatsapp", "WhatsApp (Demo)", "Social", isLocked = false, iconName = "whatsapp"),
-            LockedApp("com.discord", "Discord (Demo)", "Social", isLocked = false, iconName = "discord"),
-            LockedApp("com.google.android.gm", "Gmail (Demo)", "Utilities", isLocked = false, iconName = "gmail"),
-            LockedApp("com.google.android.apps.messaging", "Messages (Demo)", "Utilities", isLocked = false, iconName = "messages"),
-            LockedApp("com.android.chrome", "Chrome (Demo)", "Utilities", isLocked = false, iconName = "chrome"),
-            LockedApp("com.google.android.apps.nbu.paisa.user", "Google Pay (Demo)", "Finance", isLocked = false, iconName = "google_pay"),
-            LockedApp("com.chase.sig.android", "Chase Mobile (Demo)", "Finance", isLocked = false, iconName = "chase"),
-            LockedApp("com.binance.dev", "Binance (Demo)", "Finance", isLocked = false, iconName = "binance"),
-            LockedApp("com.google.android.apps.photos", "Photos & Gallery (Demo)", "Social", isLocked = false, iconName = "gallery")
-        )
-
-        for (demo in defaults) {
-            if (!currentAppsMap.containsKey(demo.packageName)) {
-                newAppsList.add(demo)
+        appDao.insertApps(newAppsList)
+        val installedPackages = newAppsList.map { it.packageName }.toSet()
+        for (existing in currentAppsMap.values) {
+            if (existing.name.endsWith(" (Demo)") && existing.packageName !in installedPackages) {
+                appDao.deleteApp(existing.packageName)
             }
         }
-
-        appDao.insertApps(newAppsList)
         logEvent("CONFIG", "Secure local privacy space synchronized with physical device apps.")
     }
 
     /**
-     * Populates standard, simulated enterprise-grade apps if database is empty, and syncs device apps.
+     * Synchronizes device apps and initializes configuration.
      */
     suspend fun prepopulateIfNeeded(context: Context) {
         // Run full sync with installed apps
