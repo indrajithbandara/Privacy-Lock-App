@@ -44,3 +44,14 @@ Android accessibility-based overlays are not an operating-system security bounda
 - Accessibility service now queries the authoritative protection row, cancels stale foreground queries, clears sessions on lifecycle events, handles changed lock targets and excludes system/launcher packages from new protection. Accessibility events are not an OS-level security boundary; rapid switching, multi-window, recents and OEM behavior remain unverified. Owner controls remain accessible.
 - Removed unnecessary Foojay toolchain resolver after API 36 job failed to resolve it. API 24 instrumentation passed on previous commit; latest run pending. Android CI and Dependency Review passed at commit 4fe191eea0dc1d485b1e3f42f86afacd83d42eb7. CodeQL upload still conflicts with repository default configuration.
 - Product language remains English; Sinhala and Tamil localization removed from scope at owner request.
+
+## Genuine UI and release validation follow-up
+
+- Emulator run 17 passed four instrumentation tests on both API 24 and API 36 at `f00b829a74e0571c644a02b99a8c9444aacd22be`, including the encryption round-trip/migration test. Later changes require fresh validation.
+- Removed the simulated sandbox and numerical privacy score. The new dashboard uses actual eligible applications, real launch intents and a connected-service status, requires PIN authentication for protection changes and shows a degraded-protection warning. Startup errors no longer instruct users to erase data.
+- App discovery updates metadata without replacing protection or pinning settings. New eligible apps can be selected automatically when the owner enables that setting. Event retention is explicit (keep all by default); older records are removed only when a user chooses a retention cap.
+- Strong biometric enrollment now requests the current PIN and uses a per-operation Android Keystore key that is invalidated when enrollment changes. Physical biometric and OEM behavior remain unverified.
+- Removed unnecessary overlay/usage/foreground/boot/package-wide permissions and unused networking dependencies; query visibility is scoped to launchable apps and home handlers.
+- Added an unsigned optimized release validation workflow and artifact checksums; no production signing keys or release publication are assumed.
+- CodeQL default setup reports a Kotlin error and rejects advanced workflow SARIF. Switching configurations requires a repository setting change; the advanced workflow remains in place. Dependency Review passed, secret scanning and push protection are enabled. Do not bypass required security checks.
+- The final rebranding remains gated on current build/security results. Localization scope was reintroduced by the latest directive; reviewed translations have not been implemented.
