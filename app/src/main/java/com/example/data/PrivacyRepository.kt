@@ -5,12 +5,14 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.example.security.AuthenticationGate
+import com.example.security.AuthenticationResult
 import com.example.security.PinCredentials
 import com.example.security.SecurityUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 
-class PrivacyRepository(private val db: AppDatabase) {
+class PrivacyRepository(private val db: AppDatabase, private val context: Context) {
 
     private val appDao = db.lockedAppDao()
     private val configDao = db.securityConfigDao()
@@ -35,23 +37,40 @@ class PrivacyRepository(private val db: AppDatabase) {
     }
 
     suspend fun changePrimaryPin(currentPin: String, newPin: String): Boolean {
-        val stored = getConfigDirect().hashedPin
-        if (stored.isNotEmpty() && !withContext(Dispatchers.Default) { PinCredentials.verify(currentPin, stored) }) {
-            logAuthenticationFailure()
-            return false
+        val configuration = getConfigDirect()
+        val stored = configuration.hashedPin
+        if (stored.isNotEmpty()) {
+            val result = AuthenticationGate.authenticate(context, configuration.failedAttemptLimit) {
+                if (!PinCredentials.verify(currentPin, stored)) return@authenticate false
+                val replacement = SecurityUtils.hashPin(newPin)
+                configDao.replacePin(stored, replacement) == 1
+            }
+            if (result.attempted && !result.accepted) logAuthenticationFailure()
+            return result.accepted
         }
         val replacement = withContext(Dispatchers.Default) { SecurityUtils.hashPin(newPin) }
         return configDao.replacePin(stored, replacement) == 1
     }
 
-    suspend fun verifyPrimaryPin(pin: String): Boolean {
-        val stored = configDao.getConfigDirect()?.hashedPin ?: return false
-        if (!withContext(Dispatchers.Default) { PinCredentials.verify(pin, stored) }) return false
-        if (PinCredentials.isLegacy(stored)) {
-            val upgraded = withContext(Dispatchers.Default) { SecurityUtils.hashPin(pin) }
-            return configDao.replacePin(stored, upgraded) == 1
+    suspend fun verifyPrimaryPin(pin: String, appName: String? = null): AuthenticationResult {
+        val configuration = configDao.getConfigDirect() ?: return AuthenticationResult(false)
+        val stored = configuration.hashedPin
+        if (stored.isEmpty()) return AuthenticationResult(false)
+        val result = AuthenticationGate.authenticate(context, configuration.failedAttemptLimit) {
+            if (!PinCredentials.verify(pin, stored)) return@authenticate false
+            if (PinCredentials.isLegacy(stored)) {
+                val upgraded = SecurityUtils.hashPin(pin)
+                return@authenticate configDao.replacePin(stored, upgraded) == 1
+            }
+            configDao.getConfigDirect()?.hashedPin == stored
         }
-        return configDao.getConfigDirect()?.hashedPin == stored
+        if (result.attempted && !result.accepted) {
+            logAuthenticationFailure(appName)
+            if (result.retryAfterSeconds >= 30) {
+                logEvent("AUTH_LOCKOUT", "Temporary PIN authentication lockout.", appName)
+            }
+        }
+        return result
     }
 
     suspend fun toggleAppLock(packageName: String, isLocked: Boolean) {
