@@ -25,7 +25,7 @@ import com.example.data.LockedApp
 import com.example.security.AppLockManager
 import com.example.security.SecurityUtils
 import com.example.ui.PrivacyViewModel
-import com.example.ui.components.SimulatedAppIcon
+import com.example.ui.components.InstalledAppIcon
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -99,7 +99,7 @@ fun DashboardScreen(viewModel: PrivacyViewModel, modifier: Modifier = Modifier, 
         items(filtered, key = { it.packageName }) { app ->
             Card(Modifier.fillMaxWidth().testTag("app_row_${app.packageName}"), shape = RoundedCornerShape(16.dp)) {
                 Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SimulatedAppIcon(iconName = app.iconName, packageName = app.packageName, size = 44)
+                    InstalledAppIcon(packageName = app.packageName, size = 44)
                     Column(Modifier.weight(1f)) {
                         Text(app.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(if (app.isLocked) stringResource(R.string.lock_configured) else stringResource(R.string.lock_not_configured), style = MaterialTheme.typography.bodySmall)

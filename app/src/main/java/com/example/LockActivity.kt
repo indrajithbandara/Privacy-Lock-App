@@ -41,7 +41,7 @@ import com.example.data.SecurityConfig
 import com.example.security.AppLockManager
 import com.example.security.SecurityUtils
 import com.example.ui.components.SecureKeypad
-import com.example.ui.components.SimulatedAppIcon
+import com.example.ui.components.InstalledAppIcon
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.TextWarmGray
 import kotlinx.coroutines.Dispatchers
@@ -296,8 +296,7 @@ fun LockScreenContent(
                 .weight(1f, fill = false)
                 .offset(x = shakeOffset.value.dp)
         ) {
-            SimulatedAppIcon(
-                iconName = "android",
+            InstalledAppIcon(
                 packageName = packageName,
                 size = 84,
                 backgroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
@@ -423,7 +422,6 @@ fun LockScreenContent(
             )
 
             if (config.biometricsEnabled) {
-                // Forgot PIN option with biometric bypass
                 TextButton(
                     onClick = {
                         onTriggerBiometric()
@@ -431,7 +429,7 @@ fun LockScreenContent(
                     modifier = Modifier.padding(bottom = 12.dp)
                 ) {
                     Text(
-                        "Forgot PIN? Recover with Biometrics",
+                        "Use enrolled biometrics",
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium)
                     )

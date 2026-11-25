@@ -44,11 +44,10 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.foundation.Image
 
 /**
- * Custom modern icon helper for simulated and physical apps
+ * Displays the installed application's real icon, or a neutral fallback.
  */
 @Composable
-fun SimulatedAppIcon(
-    iconName: String,
+fun InstalledAppIcon(
     modifier: Modifier = Modifier,
     size: Int = 44,
     packageName: String? = null,
@@ -88,22 +87,6 @@ fun SimulatedAppIcon(
         }
     }
 
-    val (vector, color) = when (iconName) {
-        "settings" -> Pair(Icons.Default.Settings, PrimarySage)
-        "play_store" -> Pair(Icons.Default.Shop, Color(0xFF34A853))
-        "installer" -> Pair(Icons.Default.Build, Color(0xFFEA4335))
-        "whatsapp" -> Pair(Icons.AutoMirrored.Filled.Chat, Color(0xFF25D366))
-        "discord" -> Pair(Icons.Default.Forum, Color(0xFF5865F2))
-        "gmail" -> Pair(Icons.Default.Email, Color(0xFFEA4335))
-        "messages" -> Pair(Icons.Default.Sms, Color(0xFF4285F4))
-        "chrome" -> Pair(Icons.Default.Language, Color(0xFFFBBC05))
-        "google_pay" -> Pair(Icons.Default.AccountBalanceWallet, Color(0xFF4285F4))
-        "chase" -> Pair(Icons.Default.CreditCard, Color(0xFF005A9C))
-        "binance" -> Pair(Icons.Default.CurrencyExchange, Color(0xFFF0B90B))
-        "gallery" -> Pair(Icons.Default.Image, Color(0xFFE066FF))
-        else -> Pair(Icons.Default.Android, PrimarySage)
-    }
-
     Box(
         modifier = modifier
             .size(size.dp)
@@ -112,9 +95,9 @@ fun SimulatedAppIcon(
         contentAlignment = Alignment.Center
     ) {
         Icon(
-            imageVector = vector,
+            imageVector = Icons.Default.Android,
             contentDescription = "Generic application icon",
-            tint = color,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size((size * 0.55f).dp)
         )
     }
@@ -363,7 +346,7 @@ fun SecureAuthDialog(
                     )
 
                     Text(
-                        text = if (isPinConfigured) "Enter privacy vault credentials" else "Default PIN is 123456. Set custom PIN in Settings.",
+                        text = if (isPinConfigured) "Enter your primary PIN" else "No PIN is configured. Set one up in Settings.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (isPinConfigured) TextWarmGray else MaterialTheme.colorScheme.primary,
                         textAlign = TextAlign.Center
@@ -408,7 +391,7 @@ fun SecureAuthDialog(
                 // Keypad Section
                 SecureKeypad(
                     onNumberClick = { num ->
-                        if (!verifying && retryAfter == 0L && pinBuffer.length < 6) {
+                        if (isPinConfigured && !verifying && retryAfter == 0L && pinBuffer.length < 6) {
                             errorMessage = null
                             pinBuffer += num
 
