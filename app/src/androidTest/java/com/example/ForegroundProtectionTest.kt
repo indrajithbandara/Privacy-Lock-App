@@ -115,7 +115,14 @@ class ForegroundProtectionTest {
         }
     }
 
-    private fun launchFixture() { shell("am start -W -n $fixture/.FixtureActivity") }
+    private fun launchFixture() {
+        // Compose/Espresso may acquire UiAutomation during UI interactions. Always
+        // reacquire the non-suppressing connection before a real external-app launch.
+        automation = instrumentation.getUiAutomation(UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES)
+        eventually("service remains connected before fixture launch") { AppLockManager.serviceConnected.value }
+        shell("am start -W -n $fixture/.FixtureActivity")
+        eventually("service observed fixture foreground") { AppLockManager.isForegroundTarget(fixture) }
+    }
     private fun enterPin(pin: String) {
         pin.forEachIndexed { index, digit ->
             // Interact with the real LockActivity Compose node, not a separate test activity
