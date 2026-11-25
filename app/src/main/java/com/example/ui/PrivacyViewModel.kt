@@ -372,7 +372,7 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
     fun exportBackup(onExport: (String) -> Unit) {
         viewModelScope.launch {
             val config = repository.getConfigDirect()
-            val backup = "hashedPin:${config.hashedPin};hashedDecoyPin:${config.hashedDecoyPin};hashedPanicPin:${config.hashedPanicPin};biometricsEnabled:${config.biometricsEnabled};autoLockTimeoutSeconds:${config.autoLockTimeoutSeconds};randomizeKeypad:${config.randomizeKeypad};vibrateOnKeyPress:${config.vibrateOnKeyPress};lockNewlyInstalledApps:${config.lockNewlyInstalledApps};intruderDetectionEnabled:${config.intruderDetectionEnabled};intruderSelfieEnabled:${config.intruderSelfieEnabled};failedAttemptLimit:${config.failedAttemptLimit};screenshotProtection:${config.screenshotProtection};autoLockNewApps:${config.autoLockNewApps};decoyModeType:${config.decoyModeType};themeMode:${config.themeMode}"
+            val backup = "themeMode:${config.themeMode};vibrateOnKeyPress:${config.vibrateOnKeyPress}"
             onExport(backup)
         }
     }
@@ -391,21 +391,14 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
                         val key = kv[0]
                         val value = kv[1]
                         config = when (key) {
-                            "hashedPin" -> config.copy(hashedPin = value)
-                            "hashedDecoyPin" -> config.copy(hashedDecoyPin = value)
-                            "hashedPanicPin" -> config.copy(hashedPanicPin = value)
-                            "biometricsEnabled" -> config.copy(biometricsEnabled = value.toBoolean())
-                            "autoLockTimeoutSeconds" -> config.copy(autoLockTimeoutSeconds = value.toInt())
-                            "randomizeKeypad" -> config.copy(randomizeKeypad = value.toBoolean())
-                            "vibrateOnKeyPress" -> config.copy(vibrateOnKeyPress = value.toBoolean())
-                            "lockNewlyInstalledApps" -> config.copy(lockNewlyInstalledApps = value.toBoolean())
-                            "intruderDetectionEnabled" -> config.copy(intruderDetectionEnabled = value.toBoolean())
-                            "intruderSelfieEnabled" -> config.copy(intruderSelfieEnabled = value.toBoolean())
-                            "failedAttemptLimit" -> config.copy(failedAttemptLimit = value.toInt())
-                            "screenshotProtection" -> config.copy(screenshotProtection = value.toBoolean())
-                            "autoLockNewApps" -> config.copy(autoLockNewApps = value.toBoolean())
-                            "decoyModeType" -> config.copy(decoyModeType = value)
-                            "themeMode" -> config.copy(themeMode = value)
+                            "themeMode" -> {
+                                require(value in setOf("SYSTEM", "LIGHT", "DARK"))
+                                config.copy(themeMode = value)
+                            }
+                            "vibrateOnKeyPress" -> {
+                                require(value == "true" || value == "false")
+                                config.copy(vibrateOnKeyPress = value.toBoolean())
+                            }
                             else -> config
                         }
                     }
