@@ -27,6 +27,8 @@ Protection profiles now use encrypted schema version 3 with an additive migratio
 
 Positive relock timeouts now schedule a cancellable foreground-session expiry check rather than waiting exclusively for an additional window event. Android background-activity restrictions and missing/ambiguous window events still limit assurance; physical-device and foreground fixture testing remain required.
 
+All five workflows passed on commit `a445dcde` (Android CI `45626819430`, API 24/36 `45626819479`, CodeQL `45626819423`, dependency review `45626819542`, unsigned release `45626819471`); 15 instrumentation tests ran on each API. A separate emulator-only fixture APK and a real foreground protection scenario have been added next, using the visible Android Settings consent UI. This new scenario must itself pass before claiming end-to-end protection. Removed unused legacy stealth-code generation and obsolete permission helpers; the legacy columns remain to preserve existing database rows.
+
 At `162f57a19fb6e5f64f347fedb62da6ae0aeb017e`, Android CI (`45619362717`), CodeQL (`45619362477`), Dependency Review (`45619362548`) and unsigned release validation (`45619362620`) succeeded. Emulator run `45619362656` succeeded on API 36 but API 24 stopped before executing tests at APK installation. No functional regression was established by that failure. A retry and an explicit emulator data partition size with storage diagnostics were initiated. All subsequent source changes require their own full validation.
 
 No production release or main-branch merge is authorized until the applicable acceptance criteria are actually verified. Physical device/OEM compatibility and production signing remain external dependencies.

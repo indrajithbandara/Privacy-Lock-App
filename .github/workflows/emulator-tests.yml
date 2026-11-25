@@ -40,6 +40,8 @@ jobs:
           disable-animations: true
           script: |
             adb shell df -h /data
+            gradle :test-fixture:assembleDebug --no-daemon --stacktrace
+            adb install test-fixture/build/outputs/apk/debug/test-fixture-debug.apk
             gradle :app:connectedOpensourceDebugAndroidTest --no-daemon --stacktrace
       - name: Upload device test reports
         if: always()
