@@ -29,3 +29,10 @@ Android accessibility-based overlays are not an operating-system security bounda
 - PIN enrollment requires matching entries; changing an existing primary PIN requires the current PIN. Decoy and panic configuration controls were removed from the settings screen.
 - Credential derivation regression tests added; CI execution and device validation pending. Persistent throttling and Keystore integration remain unresolved.
 - Android CI run 131 and Dependency Review run 25 passed on the previous commit; CodeQL advanced upload still conflicts with default setup. Do not treat new commits as verified until their own workflows complete.
+
+## Persistent authentication gate and Keystore update
+
+- A single process-wide mutex serializes PIN attempts across both authentication surfaces. Persisted attempt counters and elapsed-realtime cooldowns survive process termination; boot identifiers reset pending cooldown duration on reboot. Devices without a readable boot identifier conservatively restart the pending cooldown after process recreation. The counter is written before verification, and a successful PIN clears it only after persistence succeeds.
+- New and successfully verified legacy credential records are wrapped in Android Keystore AES-GCM. Missing or invalid keys deny verification. Hardware-backed key use is device-dependent and not asserted. Database encryption remains a separate unresolved requirement.
+- Added policy unit tests and device tests for cooldown persistence and Keystore tamper rejection, as well as API 24/36 emulator CI. New tests and builds are pending; device reboot and physical hardware behavior remain unverified.
+- Android CI run 148 and Dependency Review run 30 passed on commit `1fb176272510b71647541648e56579e37f84d703`. CodeQL run 56 failed. New changes require fresh validation.
