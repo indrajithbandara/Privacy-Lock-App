@@ -39,7 +39,9 @@ fun SettingsScreen(
     val context = LocalContext.current
 
     var showPinSetup by remember { mutableStateOf(false) }
-    var pinSetupType by remember { mutableStateOf("standard") } // "standard", "decoy", "panic"
+    var currentPinInput by remember { mutableStateOf("") }
+    var confirmPinInput by remember { mutableStateOf("") }
+    var savingPin by remember { mutableStateOf(false) }
     var pinSetupInput by remember { mutableStateOf("") }
     var pinSetupError by remember { mutableStateOf<String?>(null) }
 
@@ -109,7 +111,8 @@ fun SettingsScreen(
                         }
                         Button(
                             onClick = {
-                                pinSetupType = "standard"
+                                currentPinInput = ""
+                                confirmPinInput = ""
                                 pinSetupInput = ""
                                 pinSetupError = null
                                 showPinSetup = true
@@ -118,84 +121,6 @@ fun SettingsScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
                         ) {
                             Text("Setup")
-                        }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-
-                    // Decoy PIN Config
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(SoftAmberAccent.copy(alpha = 0.12f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Masks, contentDescription = null, tint = SoftAmberAccent, modifier = Modifier.size(18.dp))
-                        }
-                        Spacer(modifier = Modifier.width(14.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Stealth Decoy PIN", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text(
-                                text = if (config?.hashedDecoyPin?.isNotEmpty() == true) "Decoy PIN active" else "Optional. Set 6-digit fake entry.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextWarmGray
-                            )
-                        }
-                        Button(
-                            onClick = {
-                                pinSetupType = "decoy"
-                                pinSetupInput = ""
-                                pinSetupError = null
-                                showPinSetup = true
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
-                        ) {
-                            Text("Configure")
-                        }
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-
-                    // Panic PIN Config
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(MutedRedAccent.copy(alpha = 0.12f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Warning, contentDescription = null, tint = MutedRedAccent, modifier = Modifier.size(18.dp))
-                        }
-                        Spacer(modifier = Modifier.width(14.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Panic Security PIN", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text(
-                                text = if (config?.hashedPanicPin?.isNotEmpty() == true) "Panic PIN armed" else "Instant emergency close PIN.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextWarmGray
-                            )
-                        }
-                        Button(
-                            onClick = {
-                                pinSetupType = "panic"
-                                pinSetupInput = ""
-                                pinSetupError = null
-                                showPinSetup = true
-                            },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
-                        ) {
-                            Text("Arm")
                         }
                     }
 
@@ -639,16 +564,8 @@ fun SettingsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    val setupTitle = when (pinSetupType) {
-                        "standard" -> "Set Primary 6-Digit PIN"
-                        "decoy" -> "Set Stealth Decoy PIN"
-                        else -> "Set Emergency Panic PIN"
-                    }
-                    val setupDesc = when (pinSetupType) {
-                        "standard" -> "Please set a secure 6-digit code to guard your applications and privacy space."
-                        "decoy" -> "Set a 6-digit code that opens a fake crash screen to fool snoops when forced to unlock."
-                        else -> "Set a 6-digit code that instantly closes the app and goes home in case of emergency."
-                    }
+                    val setupTitle = "Set Primary 6-Digit PIN"
+                    val setupDesc = "Confirm the new PIN. To change an existing PIN, enter the current one first."
 
                     Text(
                         text = setupTitle,
@@ -664,10 +581,20 @@ fun SettingsScreen(
                         textAlign = TextAlign.Center
                     )
 
+                    if (config?.hashedPin?.isNotEmpty() == true) {
+                        OutlinedTextField(
+                            value = currentPinInput,
+                            onValueChange = { if (it.length <= 6 && it.all { ch -> ch in '0'..'9' }) currentPinInput = it },
+                            label = { Text("Current PIN") },
+                            visualTransformation = PasswordVisualTransformation(),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
                     OutlinedTextField(
                         value = pinSetupInput,
                         onValueChange = {
-                            if (it.length <= 6 && it.all { char -> char.isDigit() }) {
+                            if (it.length <= 6 && it.all { char -> char in '0'..'9' }) {
                                 pinSetupInput = it
                                 pinSetupError = null
                             }
@@ -681,6 +608,14 @@ fun SettingsScreen(
                             .fillMaxWidth()
                             .testTag("pin_setup_input"),
                         shape = RoundedCornerShape(12.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = confirmPinInput,
+                        onValueChange = { if (it.length <= 6 && it.all { ch -> ch in '0'..'9' }) confirmPinInput = it },
+                        label = { Text("Confirm new PIN") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     if (pinSetupError != null) {
@@ -705,16 +640,22 @@ fun SettingsScreen(
 
                         Button(
                             onClick = {
-                                if (pinSetupInput.length != 6) {
-                                    pinSetupError = "PIN must be exactly 6 digits."
-                                } else {
-                                    when (pinSetupType) {
-                                        "standard" -> viewModel.setupPin(pinSetupInput)
-                                        "decoy" -> viewModel.setupDecoyPin(pinSetupInput)
-                                        else -> viewModel.setupPanicPin(pinSetupInput)
+                                if (pinSetupInput.length != 6 || pinSetupInput != confirmPinInput) {
+                                    pinSetupError = "Enter matching six-digit PINs."
+                                } else if (!savingPin) {
+                                    savingPin = true
+                                    viewModel.setupPin(currentPinInput, pinSetupInput) { success ->
+                                        savingPin = false
+                                        if (success) {
+                                            currentPinInput = ""
+                                            pinSetupInput = ""
+                                            confirmPinInput = ""
+                                            showPinSetup = false
+                                            Toast.makeText(context, "PIN saved", Toast.LENGTH_SHORT).show()
+                                        } else {
+                                            pinSetupError = "Unable to update PIN. Check the current PIN."
+                                        }
                                     }
-                                    showPinSetup = false
-                                    Toast.makeText(context, "Credentials Updated Successfully!", Toast.LENGTH_SHORT).show()
                                 }
                             },
                             modifier = Modifier.weight(1f),
