@@ -351,13 +351,13 @@ fun LockScreenContent(
                             coroutineScope.launch {
                                 try {
                                     val db = AppDatabase.getDatabase(context)
-                                    val repository = com.example.data.PrivacyRepository(db)
-                                    if (repository.verifyPrimaryPin(submitted)) {
+                                    val repository = com.example.data.PrivacyRepository(db, context.applicationContext)
+                                    val result = repository.verifyPrimaryPin(submitted, appName)
+                                    if (result.accepted) {
                                         onUnlockSuccess()
                                     } else {
-                                        repository.logAuthenticationFailure(appName)
                                         shakeTrigger++
-                                        errorMessage = "Incorrect security PIN. Access denied."
+                                        errorMessage = if (result.retryAfterSeconds > 0) "Try again in ${result.retryAfterSeconds}s." else "Authentication denied."
                                     }
                                 } finally {
                                     verifying = false
