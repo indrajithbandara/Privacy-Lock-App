@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.SystemClock
 import android.provider.Settings
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -59,7 +60,8 @@ object AuthenticationGate {
                     .putLong("started", now).putLong("until", now + delay).commit()) {
                 return@withContext AuthenticationResult(false)
             }
-            if (verify()) {
+            val accepted = try { verify() } catch (cancelled: CancellationException) { throw cancelled } catch (_: Exception) { false }
+            if (accepted) {
                 // Failure to persist reset is not an authentication success.
                 return@withContext AuthenticationResult(prefs.edit().clear().commit())
             }
