@@ -1,0 +1,63 @@
+name: Signed release validation
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate-signed:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36.1 build-tools;36.0.0'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+          cache-read-only: true
+      - name: Build and verify with existing signing identity
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          EXPECTED_SIGNING_CERT_SHA256: ${{ vars.EXPECTED_SIGNING_CERT_SHA256 }}
+        run: |
+          set -euo pipefail
+          umask 077
+          test -n "$KEYSTORE_BASE64" && test -n "$STORE_PASSWORD" && test -n "$KEY_PASSWORD" && test -n "$EXPECTED_SIGNING_CERT_SHA256"
+          expected=$(printf '%s' "$EXPECTED_SIGNING_CERT_SHA256" | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')
+          [[ "$expected" =~ ^[0-9a-f]{64}$ ]]
+          KEYSTORE_PATH=$(mktemp "$RUNNER_TEMP/production-signing.XXXXXX")
+          export KEYSTORE_PATH
+          trap 'rm -f -- "$KEYSTORE_PATH"' EXIT
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          unset KEYSTORE_BASE64
+          gradle :app:assemblePlayRelease :app:assembleOpensourceRelease :app:bundlePlayRelease :app:bundleOpensourceRelease --no-daemon
+          mkdir -p signed-validation
+          for flavor in play opensource; do
+            apk="app/build/outputs/apk/$flavor/release/app-$flavor-release.apk"
+            bundle="app/build/outputs/bundle/${flavor}Release/app-$flavor-release.aab"
+            verification=$("$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$apk")
+            actual=$(printf '%s\n' "$verification" | awk '/Signer #1 certificate SHA-256 digest:/ { print $NF }' | tr '[:upper:]' '[:lower:]')
+            test "$actual" = "$expected"
+            jarsigner -verify "$bundle"
+            bundle_digest=$(keytool -printcert -jarfile "$bundle" | awk '/SHA256:/ { print $2; exit }' | tr -d ':' | tr '[:upper:]' '[:lower:]')
+            test "$bundle_digest" = "$expected"
+            cp "$apk" "$bundle" signed-validation/
+          done
+          (cd signed-validation && sha256sum *.apk *.aab > SHA256SUMS && sha256sum -c SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-release-validation
+          path: signed-validation/
+          if-no-files-found: error
