@@ -198,6 +198,14 @@ fun LockScreenContent(
 ) {
     var pinBuffer by remember { mutableStateOf("") }
     var verifying by remember { mutableStateOf(false) }
+    var retryAfter by remember { mutableStateOf(0L) }
+    LaunchedEffect(retryAfter) {
+        if (retryAfter > 0) {
+            kotlinx.coroutines.delay(1000)
+            retryAfter--
+        }
+    }
+
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -303,9 +311,9 @@ fun LockScreenContent(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            if (errorMessage != null) {
+            if (retryAfter > 0 || errorMessage != null) {
                 Text(
-                    text = errorMessage!!,
+                    text = if (retryAfter > 0) "Try again in ${retryAfter}s." else errorMessage.orEmpty(),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                     color = MaterialTheme.colorScheme.error,
                     textAlign = TextAlign.Center
@@ -340,7 +348,7 @@ fun LockScreenContent(
 
             SecureKeypad(
                 onNumberClick = { num ->
-                    if (!verifying && pinBuffer.length < 6) {
+                    if (!verifying && retryAfter == 0L && pinBuffer.length < 6) {
                         errorMessage = null
                         pinBuffer += num
 
@@ -357,7 +365,8 @@ fun LockScreenContent(
                                         onUnlockSuccess()
                                     } else {
                                         shakeTrigger++
-                                        errorMessage = if (result.retryAfterSeconds > 0) "Try again in ${result.retryAfterSeconds}s." else "Authentication denied."
+                                        retryAfter = result.retryAfterSeconds
+                                        errorMessage = "Authentication denied."
                                     }
                                 } finally {
                                     verifying = false
