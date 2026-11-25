@@ -134,7 +134,7 @@ fun PrivacyLockApp(
                     selected = viewModel.currentScreen == "intruders",
                     onClick = { viewModel.currentScreen = "intruders" },
                     icon = { Icon(Icons.Default.PhotoCamera, contentDescription = "Caught Snoops") },
-                    label = { Text("Intruders", fontSize = 11.sp, fontWeight = FontWeight.Medium) },
+                    label = { Text("Events", fontSize = 11.sp, fontWeight = FontWeight.Medium) },
                     colors = NavigationBarItemDefaults.colors(
                         selectedIconColor = MaterialTheme.colorScheme.primary,
                         indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
