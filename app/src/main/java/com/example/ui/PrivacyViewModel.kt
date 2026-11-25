@@ -442,13 +442,8 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
                 "SUCCESS_NORMAL"
             }
             else -> {
-                // Record intruder selfie
-                val randomAvatarId = secureRandom.nextInt(5) + 1 // avatar index 1-5
                 viewModelScope.launch {
-                    repository.logIntruderSelfie(
-                        failedPinAttempt = pin,
-                        avatarId = randomAvatarId
-                    )
+                    repository.logAuthenticationFailure()
                 }
                 "FAILED"
             }
