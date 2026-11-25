@@ -67,8 +67,8 @@ object AppLockManager {
             val timeout = synchronized(this@AppLockManager) { autoLockTimeoutSeconds }
             if (timeout > 0) {
                 val unlockTime = unlockedTimestamps[packageName] ?: return false
-                val elapsed = (System.currentTimeMillis() - unlockTime) / 1000
-                if (elapsed > timeout) {
+                val elapsed = (android.os.SystemClock.elapsedRealtime() - unlockTime) / 1000
+                if (elapsed >= timeout) {
                     temporarilyUnlockedPackages.remove(packageName)
                     unlockedTimestamps.remove(packageName)
                     return false
@@ -81,7 +81,7 @@ object AppLockManager {
     fun temporarilyUnlockPackage(packageName: String) {
         synchronized(temporarilyUnlockedPackages) {
             temporarilyUnlockedPackages.add(packageName)
-            unlockedTimestamps[packageName] = System.currentTimeMillis()
+            unlockedTimestamps[packageName] = android.os.SystemClock.elapsedRealtime()
         }
     }
 
