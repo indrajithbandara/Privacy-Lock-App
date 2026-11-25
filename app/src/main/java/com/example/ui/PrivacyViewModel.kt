@@ -28,6 +28,8 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.security.SecureRandom
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "privacy_settings")
@@ -194,7 +196,7 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
      */
     fun setupPin(pin: String) {
         viewModelScope.launch {
-            val hashed = SecurityUtils.hashPin(pin)
+            val hashed = withContext(Dispatchers.Default) { SecurityUtils.hashPin(pin) }
             val current = repository.getConfigDirect()
             repository.saveConfig(current.copy(hashedPin = hashed))
             repository.logEvent("CONFIG", "Master security PIN updated successfully.")
@@ -206,7 +208,7 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
      */
     fun setupDecoyPin(pin: String) {
         viewModelScope.launch {
-            val hashed = SecurityUtils.hashPin(pin)
+            val hashed = withContext(Dispatchers.Default) { SecurityUtils.hashPin(pin) }
             val current = repository.getConfigDirect()
             repository.saveConfig(current.copy(hashedDecoyPin = hashed))
             repository.logEvent("CONFIG", "Decoy stealth security PIN updated successfully.")
@@ -359,7 +361,7 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
      */
     fun setupPanicPin(pin: String) {
         viewModelScope.launch {
-            val hashed = SecurityUtils.hashPin(pin)
+            val hashed = withContext(Dispatchers.Default) { SecurityUtils.hashPin(pin) }
             val current = repository.getConfigDirect()
             repository.saveConfig(current.copy(hashedPanicPin = hashed))
             repository.logEvent("CONFIG", "Panic security PIN configured.")
@@ -429,25 +431,13 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
      * - "SUCCESS_DECOY" if matches decoy PIN.
      * - "FAILED" if no match.
      */
-    fun verifyPin(pin: String): String {
-        val config = securityConfig.value ?: return "FAILED"
-        
-        val targetPinHash = config.hashedPin
-        if (targetPinHash.isEmpty()) return "FAILED"
-        val hashedInput = SecurityUtils.hashPin(pin)
-
-        return when {
-            hashedInput == targetPinHash -> {
-                isDecoyModeActive = false
-                "SUCCESS_NORMAL"
-            }
-            else -> {
-                viewModelScope.launch {
-                    repository.logAuthenticationFailure()
-                }
-                "FAILED"
-            }
+    suspend fun verifyPin(pin: String): String {
+        if (repository.verifyPrimaryPin(pin)) {
+            isDecoyModeActive = false
+            return "SUCCESS_NORMAL"
         }
+        repository.logAuthenticationFailure()
+        return "FAILED"
     }
 
     /**
