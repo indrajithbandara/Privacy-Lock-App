@@ -49,3 +49,7 @@ jobs:
           path: |
             authentication-test-results.txt
             foreground-test-log.txt
+            restart-prepare-results.txt
+            restart-verify-results.txt
+            reboot-prepare-results.txt
+            reboot-verify-results.txt

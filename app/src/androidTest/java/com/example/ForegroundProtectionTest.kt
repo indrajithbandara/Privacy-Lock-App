@@ -4,6 +4,8 @@ import android.app.UiAutomation
 import android.graphics.Rect
 import android.os.Build
 import android.os.SystemClock
+import android.os.PowerManager
+import android.app.KeyguardManager
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -60,10 +62,10 @@ class ForegroundProtectionTest {
 
     private fun hasText(text: String) = nodes().any { it.text?.toString() == text }
 
-    private fun awaitRealLock(prompt: String) {
+    private fun awaitRealLock(prompt: String, timeout: Long = 15_000) {
         // A secure activity can be absent from UiAutomation's accessibility tree even
         // when its window is visible. Check actual resumed/focused lifecycle and rendered UI.
-        eventually("foreground lock activity resumed and focused") {
+        eventually("foreground lock activity resumed and focused", timeout) {
             var focused = false
             instrumentation.runOnMainSync {
                 focused = ActivityLifecycleMonitorRegistry.getInstance()
@@ -228,8 +230,55 @@ class ForegroundProtectionTest {
             launchFixture()
             awaitRealLock(prompt)
             android.util.Log.i("ForegroundProtectionTest", "Observed strict profile relock")
+
+            // Disable the strict profile, then verify the actual supported 15-second
+            // timed session expires while the protected fixture stays foreground.
+            shell("input keyevent KEYCODE_HOME")
+            eventually("leave strict profile prompt") { !AppLockManager.isForegroundTarget(fixture) }
+            repository.setProfileActive(activeProfile.id, false)
+            repository.toggleAppLock(fixture, true)
+            repository.updateConfig { it.copy(autoLockTimeoutSeconds = 15) }
+            assertFalse(db.lockedAppDao().isImmediateProfileLock(fixture))
+            eventually("timed policy loaded") { AppLockManager.getAutoLockTimeoutSeconds(fixture) == 15 }
+            launchFixture()
+            awaitRealLock(prompt)
+            enterPin("246810")
+            awaitFixtureContent()
+            awaitRealLock(prompt, 30_000)
+            android.util.Log.i("ForegroundProtectionTest", "Observed timed foreground expiration")
+
+            // Use the actual screen-off-only policy, not a simulated broadcast.
+            shell("input keyevent KEYCODE_HOME")
+            eventually("leave timed prompt") { !AppLockManager.isForegroundTarget(fixture) }
+            repository.updateConfig { it.copy(autoLockTimeoutSeconds = -1) }
+            eventually("screen-off policy loaded") { AppLockManager.getAutoLockTimeoutSeconds(fixture) == -1 }
+            launchFixture()
+            awaitRealLock(prompt)
+            enterPin("246810")
+            awaitFixtureContent()
+            assertTrue(AppLockManager.isPackageTemporarilyUnlocked(fixture))
+            val power = checkNotNull(context.getSystemService(PowerManager::class.java))
+            val keyguard = checkNotNull(context.getSystemService(KeyguardManager::class.java))
+            assertFalse("Disposable emulator must have no secure device credential", keyguard.isDeviceSecure)
+            shell("input keyevent KEYCODE_SLEEP")
+            eventually("actual screen off") { !power.isInteractive }
+            eventually("screen-off session cleared") { !AppLockManager.isPackageTemporarilyUnlocked(fixture) }
+            shell("input keyevent KEYCODE_WAKEUP")
+            eventually("actual screen awake") { power.isInteractive }
+            if (keyguard.isKeyguardLocked) shell("input keyevent KEYCODE_MENU")
+            eventually("unsecured emulator keyguard dismissed") { !keyguard.isKeyguardLocked }
+            launchFixture()
+            awaitRealLock(prompt)
+            android.util.Log.i("ForegroundProtectionTest", "Observed screen-off relock")
+
             changeServiceThroughSettings(false)
             assertFalse(AppLockManager.serviceConnected.value)
+            assertFalse(AppLockManager.isPackageTemporarilyUnlocked(fixture))
+            changeServiceThroughSettings(true)
+            launchFixture()
+            awaitRealLock(prompt)
+            android.util.Log.i("ForegroundProtectionTest", "Observed lock after visible permission restoration")
+            changeServiceThroughSettings(false)
         } catch (error: Throwable) {
             failure = error
             throw error
