@@ -11,7 +11,7 @@ object SecurityUtils {
     private val secureRandom = SecureRandom()
 
     fun hashPin(pin: String): String =
-        PinCredentials.create(pin, android.os.Build.VERSION.SDK_INT >= 26)
+        CredentialEnvelope.wrap(PinCredentials.create(pin, android.os.Build.VERSION.SDK_INT >= 26))
 
     /**
      * Generates a 4-digit secret key for Stealth Dial mode.
