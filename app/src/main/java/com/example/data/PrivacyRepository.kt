@@ -3,40 +3,147 @@ package com.example.data
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import com.example.security.AppLockManager
+import com.example.security.AuthenticationGate
+import com.example.security.AuthenticationResult
+import com.example.security.PinCredentials
+import com.example.security.CredentialEnvelope
+import com.example.security.SecurityUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import androidx.room.withTransaction
 
-class PrivacyRepository(private val db: AppDatabase) {
+class PrivacyRepository(private val db: AppDatabase, private val context: Context) {
 
     private val appDao = db.lockedAppDao()
     private val configDao = db.securityConfigDao()
     private val eventDao = db.timelineEventDao()
     private val selfieDao = db.intruderSelfieDao()
+    private val retentionPreferences = context.getSharedPreferences("event_retention", Context.MODE_PRIVATE)
+
+    fun eventRetentionLimit(): Int = retentionPreferences.getInt("limit", 0).takeIf { it in setOf(0, 100, 500, 1000) } ?: 0
+
+    suspend fun setEventRetentionLimit(limit: Int) {
+        require(limit in setOf(0, 100, 500, 1000))
+        withContext(Dispatchers.IO) {
+            check(retentionPreferences.edit().putInt("limit", limit).commit())
+            if (limit > 0) eventDao.retainNewestEvents(limit)
+        }
+    }
 
     val allApps: Flow<List<LockedApp>> = appDao.getAllApps()
     val securityConfig: Flow<SecurityConfig?> = configDao.getConfig()
     val timelineEvents: Flow<List<TimelineEvent>> = eventDao.getEvents()
     val intruderSelfies: Flow<List<IntruderSelfie>> = selfieDao.getSelfies()
+    val profiles = db.protectionProfileDao().observeProfiles()
+    val profileMembers = db.protectionProfileDao().observeMembers()
+    val effectiveLocks = appDao.getEffectiveLocks()
+
+    suspend fun saveProfile(id: Long?, name: String, packages: Set<String>, immediateRelock: Boolean) {
+        val normalized = name.trim()
+        require(normalized.length in 1..60)
+        val eligible = withContext(Dispatchers.IO) { packages.filter { AppLockManager.canProtect(context, it) } }
+        require(eligible.size == packages.size)
+        db.withTransaction {
+            check(configDao.getConfigDirect()?.hashedPin?.isNotEmpty() == true)
+            val dao = db.protectionProfileDao()
+            val profileId = if (id == null) dao.insert(ProtectionProfile(name = normalized, forceImmediateRelock = immediateRelock)) else {
+                checkNotNull(dao.get(id))
+                dao.rename(id, normalized)
+                dao.setImmediateRelock(id, immediateRelock)
+                id
+            }
+            dao.clearMembers(profileId)
+            dao.insertMembers(eligible.map { ProfileApp(profileId, it) })
+            logEvent(if (id == null) "PROFILE_CREATED" else "PROFILE_UPDATED", normalized)
+        }
+        AppLockManager.clearTemporaryUnlocks()
+    }
+
+    suspend fun setProfileActive(id: Long, active: Boolean) {
+        db.withTransaction {
+            check(configDao.getConfigDirect()?.hashedPin?.isNotEmpty() == true)
+            val profile = checkNotNull(db.protectionProfileDao().get(id))
+            db.protectionProfileDao().setActive(id, active)
+            logEvent(if (active) "PROFILE_ACTIVATED" else "PROFILE_DEACTIVATED", profile.name)
+        }
+        AppLockManager.clearTemporaryUnlocks()
+    }
+
+    suspend fun deleteProfile(id: Long) {
+        db.withTransaction {
+            check(configDao.getConfigDirect()?.hashedPin?.isNotEmpty() == true)
+            val profile = checkNotNull(db.protectionProfileDao().get(id))
+            db.protectionProfileDao().delete(id)
+            logEvent("PROFILE_DELETED", profile.name)
+        }
+        AppLockManager.clearTemporaryUnlocks()
+    }
 
     suspend fun getApp(packageName: String): LockedApp? = appDao.getApp(packageName)
 
     suspend fun getConfigDirect(): SecurityConfig {
-        return configDao.getConfigDirect() ?: SecurityConfig().also {
-            configDao.insertConfig(it)
+        configDao.initializeConfig(SecurityConfig())
+        return checkNotNull(configDao.getConfigDirect())
+    }
+
+    suspend fun updateConfig(transform: (SecurityConfig) -> SecurityConfig) {
+        db.withTransaction {
+            val current = configDao.getConfigDirect() ?: SecurityConfig()
+            configDao.insertConfig(transform(current).copy(hashedPin = current.hashedPin))
         }
     }
 
-    suspend fun saveConfig(config: SecurityConfig) {
-        configDao.insertConfig(config)
+    suspend fun changePrimaryPin(currentPin: String, newPin: String): Boolean {
+        val configuration = getConfigDirect()
+        val stored = configuration.hashedPin
+        if (stored.isNotEmpty()) {
+            val result = AuthenticationGate.authenticate(context, configuration.failedAttemptLimit) {
+                val decoded = CredentialEnvelope.unwrap(stored) ?: return@authenticate false
+                if (!PinCredentials.verify(currentPin, decoded)) return@authenticate false
+                val replacement = SecurityUtils.hashPin(newPin)
+                configDao.replacePin(stored, replacement) == 1
+            }
+            if (result.attempted && !result.accepted) logAuthenticationFailure()
+            if (result.accepted) AppLockManager.clearTemporaryUnlocks()
+            return result.accepted
+        }
+        val replacement = withContext(Dispatchers.Default) { SecurityUtils.hashPin(newPin) }
+        return configDao.replacePin(stored, replacement) == 1
+    }
+
+    suspend fun verifyPrimaryPin(pin: String, appName: String? = null): AuthenticationResult {
+        val configuration = configDao.getConfigDirect() ?: return AuthenticationResult(false)
+        val stored = configuration.hashedPin
+        if (stored.isEmpty()) return AuthenticationResult(false)
+        val result = AuthenticationGate.authenticate(context, configuration.failedAttemptLimit) {
+            val decoded = CredentialEnvelope.unwrap(stored) ?: return@authenticate false
+            if (!PinCredentials.verify(pin, decoded)) return@authenticate false
+            if (!CredentialEnvelope.isWrapped(stored) || PinCredentials.isLegacy(decoded)) {
+                val upgraded = SecurityUtils.hashPin(pin)
+                return@authenticate configDao.replacePin(stored, upgraded) == 1
+            }
+            configDao.getConfigDirect()?.hashedPin == stored
+        }
+        if (result.attempted && !result.accepted) {
+            logAuthenticationFailure(appName)
+            if (result.retryAfterSeconds >= 30) {
+                logEvent("AUTH_LOCKOUT", "Temporary PIN authentication lockout.", appName)
+            }
+        }
+        return result
     }
 
     suspend fun toggleAppLock(packageName: String, isLocked: Boolean) {
+        if (isLocked && (getConfigDirect().hashedPin.isEmpty() || !AppLockManager.canProtect(context, packageName))) return
         appDao.updateAppLockStatus(packageName, isLocked)
         val app = appDao.getApp(packageName)
         val status = if (isLocked) "locked" else "unlocked"
         logEvent(
             type = "CONFIG",
-            description = "Simulated application '${app?.name ?: packageName}' has been $status.",
+            description = "Protection preference for '${app?.name ?: packageName}' changed to $status.",
             appName = app?.name
         )
     }
@@ -50,27 +157,21 @@ class PrivacyRepository(private val db: AppDatabase) {
     }
 
     suspend fun logEvent(type: String, description: String, appName: String? = null) {
-        eventDao.insertEvent(
-            TimelineEvent(
-                type = type,
-                description = description,
-                appName = appName
+        db.withTransaction {
+            eventDao.insertEvent(
+                TimelineEvent(
+                    type = type,
+                    description = description,
+                    appName = appName
+                )
             )
-        )
+            val limit = eventRetentionLimit()
+            if (limit > 0) eventDao.retainNewestEvents(limit)
+        }
     }
 
-    suspend fun logIntruderSelfie(failedPinAttempt: String, avatarId: Int) {
-        val maskedAttempt = "*".repeat(failedPinAttempt.length).ifEmpty { "None" }
-        selfieDao.insertSelfie(
-            IntruderSelfie(
-                failedPinAttempt = maskedAttempt,
-                avatarId = avatarId
-            )
-        )
-        logEvent(
-            type = "INTRUDER",
-            description = "Intruder attempt blocked! Masked entry: '$maskedAttempt'. Secure capture recorded."
-        )
+    suspend fun logAuthenticationFailure(appName: String? = null) {
+        logEvent("AUTH_FAILURE", "Incorrect PIN entered.", appName)
     }
 
     suspend fun deleteIntruderSelfie(id: Int) {
@@ -127,10 +228,12 @@ class PrivacyRepository(private val db: AppDatabase) {
         val installedApps = try {
             pm.getInstalledApplications(android.content.pm.PackageManager.GET_META_DATA)
         } catch (e: Exception) {
-            emptyList()
+            return
         }
 
         val currentAppsMap = appDao.getAllAppsDirect().associateBy { it.packageName }
+        val configuration = configDao.getConfigDirect()
+        val autoLock = configuration?.lockNewlyInstalledApps == true && configuration.hashedPin.isNotEmpty()
         val newAppsList = mutableListOf<LockedApp>()
 
         for (appInfo in installedApps) {
@@ -143,7 +246,7 @@ class PrivacyRepository(private val db: AppDatabase) {
             val category = getCategoryForApp(appInfo)
 
             val existing = currentAppsMap[appInfo.packageName]
-            val isLocked = existing?.isLocked ?: false
+            val isLocked = existing?.isLocked ?: (autoLock && AppLockManager.canProtect(context, appInfo.packageName))
             val isFavorite = existing?.isFavorite ?: false
             val isPinned = existing?.isPinned ?: false
             val iconName = existing?.iconName ?: getFallbackIconName(appInfo.packageName)
@@ -161,40 +264,29 @@ class PrivacyRepository(private val db: AppDatabase) {
             )
         }
 
-        // Include simulated defaults if they are not already there (so the interactive sandbox works seamlessly)
-        val defaults = listOf(
-            LockedApp("com.whatsapp", "WhatsApp (Demo)", "Social", isLocked = false, iconName = "whatsapp"),
-            LockedApp("com.discord", "Discord (Demo)", "Social", isLocked = false, iconName = "discord"),
-            LockedApp("com.google.android.gm", "Gmail (Demo)", "Utilities", isLocked = false, iconName = "gmail"),
-            LockedApp("com.google.android.apps.messaging", "Messages (Demo)", "Utilities", isLocked = false, iconName = "messages"),
-            LockedApp("com.android.chrome", "Chrome (Demo)", "Utilities", isLocked = false, iconName = "chrome"),
-            LockedApp("com.google.android.apps.nbu.paisa.user", "Google Pay (Demo)", "Finance", isLocked = false, iconName = "google_pay"),
-            LockedApp("com.chase.sig.android", "Chase Mobile (Demo)", "Finance", isLocked = false, iconName = "chase"),
-            LockedApp("com.binance.dev", "Binance (Demo)", "Finance", isLocked = false, iconName = "binance"),
-            LockedApp("com.google.android.apps.photos", "Photos & Gallery (Demo)", "Social", isLocked = false, iconName = "gallery")
-        )
-
-        for (demo in defaults) {
-            if (!currentAppsMap.containsKey(demo.packageName)) {
-                newAppsList.add(demo)
+        db.withTransaction {
+            newAppsList.forEach { app ->
+                appDao.insertNewApp(app)
+                appDao.updateAppMetadata(app.packageName, app.name, app.category, app.iconName)
             }
         }
-
-        appDao.insertApps(newAppsList)
-        logEvent("CONFIG", "Secure local privacy space synchronized with physical device apps.")
+        val installedPackages = newAppsList.map { it.packageName }.toSet()
+        for (existing in currentAppsMap.values) {
+            if (existing.name.endsWith(" (Demo)") && existing.packageName !in installedPackages) {
+                appDao.deleteApp(existing.packageName)
+            }
+        }
+        // Ordinary refreshes are not security events.
     }
 
     /**
-     * Populates standard, simulated enterprise-grade apps if database is empty, and syncs device apps.
+     * Synchronizes device apps and initializes configuration.
      */
     suspend fun prepopulateIfNeeded(context: Context) {
         // Run full sync with installed apps
         syncInstalledApps(context)
 
         // Prepopulate default config too
-        val currentConfig = configDao.getConfigDirect()
-        if (currentConfig == null) {
-            configDao.insertConfig(SecurityConfig())
-        }
+        configDao.initializeConfig(SecurityConfig())
     }
 }

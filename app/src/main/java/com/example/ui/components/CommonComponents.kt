@@ -17,12 +17,19 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.contentDescription
+import com.example.R
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -43,11 +50,10 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.foundation.Image
 
 /**
- * Custom modern icon helper for simulated and physical apps
+ * Displays the installed application's real icon, or a neutral fallback.
  */
 @Composable
-fun SimulatedAppIcon(
-    iconName: String,
+fun InstalledAppIcon(
     modifier: Modifier = Modifier,
     size: Int = 44,
     packageName: String? = null,
@@ -78,29 +84,13 @@ fun SimulatedAppIcon(
         if (bitmap != null) {
             Image(
                 bitmap = bitmap,
-                contentDescription = "App Icon",
+                contentDescription = null,
                 modifier = modifier
                     .size(size.dp)
                     .clip(RoundedCornerShape(12.dp))
             )
             return
         }
-    }
-
-    val (vector, color) = when (iconName) {
-        "settings" -> Pair(Icons.Default.Settings, PrimarySage)
-        "play_store" -> Pair(Icons.Default.Shop, Color(0xFF34A853))
-        "installer" -> Pair(Icons.Default.Build, Color(0xFFEA4335))
-        "whatsapp" -> Pair(Icons.AutoMirrored.Filled.Chat, Color(0xFF25D366))
-        "discord" -> Pair(Icons.Default.Forum, Color(0xFF5865F2))
-        "gmail" -> Pair(Icons.Default.Email, Color(0xFFEA4335))
-        "messages" -> Pair(Icons.Default.Sms, Color(0xFF4285F4))
-        "chrome" -> Pair(Icons.Default.Language, Color(0xFFFBBC05))
-        "google_pay" -> Pair(Icons.Default.AccountBalanceWallet, Color(0xFF4285F4))
-        "chase" -> Pair(Icons.Default.CreditCard, Color(0xFF005A9C))
-        "binance" -> Pair(Icons.Default.CurrencyExchange, Color(0xFFF0B90B))
-        "gallery" -> Pair(Icons.Default.Image, Color(0xFFE066FF))
-        else -> Pair(Icons.Default.Android, PrimarySage)
     }
 
     Box(
@@ -111,9 +101,9 @@ fun SimulatedAppIcon(
         contentAlignment = Alignment.Center
     ) {
         Icon(
-            imageVector = vector,
-            contentDescription = "Simulated $iconName icon",
-            tint = color,
+            imageVector = Icons.Default.Android,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size((size * 0.55f).dp)
         )
     }
@@ -188,6 +178,7 @@ fun SecureKeypad(
             horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally)
         ) {
             // Clear Button
+            val clearDescription = stringResource(R.string.auth_clear)
             IconButton(
                 onClick = {
                     triggerVibration()
@@ -197,6 +188,7 @@ fun SecureKeypad(
                     .weight(1f)
                     .height(64.dp)
                     .clip(CircleShape)
+                    .semantics { contentDescription = clearDescription }
                     .testTag("keypad_btn_clear")
             ) {
                 Text(
@@ -231,7 +223,7 @@ fun SecureKeypad(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Backspace,
-                    contentDescription = "Delete",
+                    contentDescription = stringResource(R.string.auth_delete),
                     tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     modifier = Modifier.size(24.dp)
                 )
@@ -239,7 +231,6 @@ fun SecureKeypad(
         }
     }
 }
-
 @Composable
 fun KeypadButton(
     text: String,
@@ -251,7 +242,7 @@ fun KeypadButton(
             .height(64.dp)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
-            .clickable(onClick = onClick)
+            .clickable(role = Role.Button, onClick = onClick)
             .testTag("keypad_btn_$text"),
         contentAlignment = Alignment.Center
     ) {
@@ -275,31 +266,27 @@ fun SecureAuthDialog(
     isOpen: Boolean,
     title: String,
     randomizeKeypad: Boolean,
-    decoyModeType: String, // "NONE", "FAKE_CRASH"
-    isDecoyModeActive: Boolean,
     isPinConfigured: Boolean = true,
     vibrateOnKeyPress: Boolean = true,
-    onVerify: (String) -> String, // Returns "SUCCESS_NORMAL", "SUCCESS_DECOY", "FAILED"
+    onVerify: suspend (String) -> String,
     onDismiss: () -> Unit,
     onSuccess: () -> Unit
 ) {
     if (!isOpen) return
+    val context = LocalContext.current
+
+    val verifyScope = rememberCoroutineScope()
+    var verifying by remember { mutableStateOf(false) }
+    var retryAfter by remember { mutableStateOf(0L) }
+    LaunchedEffect(retryAfter) {
+        if (retryAfter > 0) {
+            kotlinx.coroutines.delay(1000)
+            retryAfter--
+        }
+    }
 
     var pinBuffer by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var attemptsCount by remember { mutableStateOf(0) }
-    var showFakeCrash by remember { mutableStateOf(false) }
-
-    // Fake crash behavior helper
-    if (showFakeCrash) {
-        FakeCrashScreen(onClose = {
-            showFakeCrash = false
-            pinBuffer = ""
-            errorMessage = null
-            onDismiss()
-        })
-        return
-    }
 
     Dialog(
         onDismissRequest = {
@@ -338,7 +325,7 @@ fun SecureAuthDialog(
                         errorMessage = null
                         onDismiss()
                     }) {
-                        Icon(Icons.Default.Close, contentDescription = "Close auth screen")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.auth_close))
                     }
 
                     Icon(
@@ -368,7 +355,7 @@ fun SecureAuthDialog(
                     )
 
                     Text(
-                        text = if (isPinConfigured) "Enter privacy vault credentials" else "Default PIN is 123456. Set custom PIN in Settings.",
+                        text = if (isPinConfigured) stringResource(R.string.auth_primary_pin) else stringResource(R.string.auth_no_pin),
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (isPinConfigured) TextWarmGray else MaterialTheme.colorScheme.primary,
                         textAlign = TextAlign.Center
@@ -376,8 +363,10 @@ fun SecureAuthDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // PIN Dots indicators
+                    // PIN Dots indicators; accessibility exposes only the number of entered digits.
+                    val digitStatus = stringResource(R.string.auth_digits_entered, pinBuffer.length)
                     Row(
+                        modifier = Modifier.semantics { contentDescription = digitStatus },
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -398,9 +387,9 @@ fun SecureAuthDialog(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    if (errorMessage != null) {
+                    if (retryAfter > 0 || errorMessage != null) {
                         Text(
-                            text = errorMessage!!,
+                            text = if (retryAfter > 0) stringResource(R.string.auth_retry_seconds, retryAfter) else errorMessage.orEmpty(),
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                             color = MaterialTheme.colorScheme.error,
                             textAlign = TextAlign.Center
@@ -413,33 +402,27 @@ fun SecureAuthDialog(
                 // Keypad Section
                 SecureKeypad(
                     onNumberClick = { num ->
-                        if (pinBuffer.length < 6) {
+                        if (isPinConfigured && !verifying && retryAfter == 0L && pinBuffer.length < 6) {
                             errorMessage = null
                             pinBuffer += num
 
                             // Auto verify on 6 digits
                             if (pinBuffer.length == 6) {
-                                when (onVerify(pinBuffer)) {
-                                    "SUCCESS_NORMAL" -> {
-                                        pinBuffer = ""
-                                        errorMessage = null
-                                        onSuccess()
-                                    }
-                                    "SUCCESS_DECOY" -> {
-                                        pinBuffer = ""
-                                        errorMessage = null
-                                        onSuccess()
-                                    }
-                                    else -> {
-                                        attemptsCount++
-                                        pinBuffer = ""
-                                        errorMessage = "Incorrect security code. Attempt recorded."
-
-                                        // Trigger decoy screen if configured and attempts > 2
-                                        if (decoyModeType == "FAKE_CRASH" && attemptsCount >= 3) {
-                                            showFakeCrash = true
-                                            attemptsCount = 0
+                                val submitted = pinBuffer
+                                pinBuffer = ""
+                                verifying = true
+                                verifyScope.launch {
+                                    try {
+                                        val result = onVerify(submitted)
+                                        if (result == "SUCCESS_NORMAL") {
+                                            errorMessage = null
+                                            onSuccess()
+                                        } else {
+                                            retryAfter = result.substringAfter("LOCKED:", "0").toLongOrNull() ?: 0L
+                                            errorMessage = context.getString(R.string.auth_denied)
                                         }
+                                    } finally {
+                                        verifying = false
                                     }
                                 }
                             }
@@ -458,69 +441,6 @@ fun SecureAuthDialog(
                     vibrateOnKeyPress = vibrateOnKeyPress,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
-            }
-        }
-    }
-}
-
-/**
- * Interactive full-screen Fake Crash Decoy Screen
- */
-@Composable
-fun FakeCrashScreen(onClose: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = Color(0xFF1C1B1F)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(32.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFEA4335).copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = Color(0xFFEA4335),
-                    modifier = Modifier.size(36.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "PrivacyLock has stopped",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = Color.White,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "An unexpected error occurred. The application must close. Please try again later.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.LightGray,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(
-                onClick = onClose,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F3F3F)),
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth(0.7f)
-            ) {
-                Text("Close app", color = Color.White)
             }
         }
     }

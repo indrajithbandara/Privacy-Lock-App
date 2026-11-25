@@ -14,8 +14,8 @@ android {
     applicationId = "com.aistudio.privacylock.pnvxld"
     minSdk = 24
     targetSdk = 36
-    versionCode = 1
-    versionName = "1.0"
+    versionCode = 4
+    versionName = "2.0.0-rc.3"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -32,20 +32,13 @@ android {
 
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      val keystoreFile = file(keystorePath)
-      if (keystoreFile.exists()) {
+      val keystorePath = System.getenv("KEYSTORE_PATH")
+      val keystoreFile = keystorePath?.let { rootProject.file(it) }
+      if (keystoreFile?.isFile == true && !System.getenv("STORE_PASSWORD").isNullOrBlank() && !System.getenv("KEY_PASSWORD").isNullOrBlank()) {
         storeFile = keystoreFile
         storePassword = System.getenv("STORE_PASSWORD")
         keyAlias = "upload"
         keyPassword = System.getenv("KEY_PASSWORD")
-      } else {
-        // Fallback to debug configuration if release keystore is not available (e.g. during local developer builds)
-        val debugConfig = signingConfigs.getByName("debug")
-        storeFile = debugConfig.storeFile
-        storePassword = debugConfig.storePassword
-        keyAlias = debugConfig.keyAlias
-        keyPassword = debugConfig.keyPassword
       }
     }
   }
@@ -53,9 +46,13 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = false
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      signingConfig = signingConfigs.getByName("release")
+      val productionSigning = signingConfigs.getByName("release")
+      if (productionSigning.storeFile?.isFile == true && !productionSigning.storePassword.isNullOrBlank() && !productionSigning.keyPassword.isNullOrBlank()) {
+        signingConfig = productionSigning
+      }
     }
     debug {
       // Default debug build type automatically uses the standard Android debug keystore.
@@ -108,17 +105,14 @@ dependencies {
   implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.room.ktx)
   implementation(libs.androidx.room.runtime)
+  implementation("net.zetetic:sqlcipher-android:4.20.0@aar")
+  implementation("androidx.sqlite:sqlite:2.7.0")
   // implementation(libs.coil.compose)
-  implementation(libs.converter.moshi)
   // implementation(libs.firebase.ai)
   // implementation(libs.firebase.appcheck.recaptcha)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.core)
-  implementation(libs.logging.interceptor)
-  implementation(libs.moshi.kotlin)
-  implementation(libs.okhttp)
   // implementation(libs.play.services.location)
-  implementation(libs.retrofit)
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.junit)
@@ -136,5 +130,4 @@ dependencies {
   debugImplementation(libs.androidx.compose.ui.test.manifest)
   debugImplementation(libs.androidx.compose.ui.tooling)
   "ksp"(libs.androidx.room.compiler)
-  "ksp"(libs.moshi.kotlin.codegen)
 }

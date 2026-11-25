@@ -17,6 +17,16 @@ class ExampleInstrumentedTest {
   fun useAppContext() {
     // Context of the app under test.
     val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-    assertEquals("com.example", appContext.packageName)
+    assertEquals("com.aistudio.privacylock.pnvxld", appContext.packageName)
+  }
+
+  @Test
+  fun debugBrandingPreservesApplicationIdentity() {
+    val context = InstrumentationRegistry.getInstrumentation().targetContext
+    assertEquals("Untouched", context.getString(R.string.app_name))
+    assertEquals("Untouched: Privacy Lock", context.getString(R.string.product_name))
+    assertEquals("Your apps. Your boundaries.", context.getString(R.string.product_tagline))
+    assertNotNull(context.packageManager.getApplicationIcon(context.packageName))
+    assertEquals("com.aistudio.privacylock.pnvxld", context.packageName)
   }
 }

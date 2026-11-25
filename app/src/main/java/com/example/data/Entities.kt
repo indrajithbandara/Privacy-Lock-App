@@ -2,6 +2,9 @@ package com.example.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.ColumnInfo
 
 @Entity(tableName = "locked_apps")
 data class LockedApp(
@@ -14,6 +17,15 @@ data class LockedApp(
     val iconName: String
 )
 
+@Entity(tableName = "protection_profiles")
+data class ProtectionProfile(@PrimaryKey(autoGenerate = true) val id: Long = 0, val name: String, val active: Boolean = false,
+    @ColumnInfo(defaultValue = "0") val forceImmediateRelock: Boolean = false)
+
+@Entity(tableName = "profile_apps", primaryKeys = ["profileId", "packageName"],
+    foreignKeys = [ForeignKey(entity = ProtectionProfile::class, parentColumns = ["id"], childColumns = ["profileId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("packageName")])
+data class ProfileApp(val profileId: Long, val packageName: String)
+
 @Entity(tableName = "security_config")
 data class SecurityConfig(
     @PrimaryKey val id: String = "global",
@@ -25,15 +37,15 @@ data class SecurityConfig(
     val randomizeKeypad: Boolean = false,
     val vibrateOnKeyPress: Boolean = true,
     val lockNewlyInstalledApps: Boolean = false,
-    val intruderDetectionEnabled: Boolean = true,
-    val intruderSelfieEnabled: Boolean = true,
+    val intruderDetectionEnabled: Boolean = false,
+    val intruderSelfieEnabled: Boolean = false,
     val failedAttemptLimit: Int = 5,
     val screenshotProtection: Boolean = false,
     val autoLockNewApps: Boolean = false,
     val temporaryUnlockDurationMinutes: Int = 0,
     val decoyModeType: String = "NONE",
     val themeMode: String = "SYSTEM",
-    val stealthCode: String = "#1234"
+    val stealthCode: String = "" // Legacy compatibility column; has no runtime behavior.
 )
 
 @Entity(tableName = "timeline_events")

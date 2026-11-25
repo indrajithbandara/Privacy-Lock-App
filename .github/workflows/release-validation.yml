@@ -1,0 +1,43 @@
+name: Release build validation
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unsigned-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36.1'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.1'
+      - name: Build optimized unsigned release variants
+        run: bash .github/scripts/gradle-build-retry.sh :app:assemblePlayRelease :app:assembleOpensourceRelease :app:bundlePlayRelease :app:bundleOpensourceRelease --no-daemon --stacktrace
+      - name: Check artifact presence and generate SHA-256 checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p validation-artifacts
+          mapfile -t apks < <(find app/build/outputs/apk -name '*-release-unsigned.apk' -type f)
+          mapfile -t bundles < <(find app/build/outputs/bundle -name '*-release.aab' -type f)
+          test "${#apks[@]}" -eq 2
+          test "${#bundles[@]}" -eq 2
+          cp "${apks[@]}" "${bundles[@]}" validation-artifacts/
+          (cd validation-artifacts && sha256sum *.apk *.aab > SHA256SUMS && sha256sum -c SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unsigned-release-validation-not-for-distribution
+          path: validation-artifacts/
+          if-no-files-found: error

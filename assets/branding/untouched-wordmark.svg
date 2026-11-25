@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 200" role="img" aria-label="Untouched: Privacy Lock — Your apps. Your boundaries.">
+  <rect width="720" height="200" rx="24" fill="#F5F6EF"/>
+  <g transform="translate(32 46)"><rect width="108" height="108" rx="24" fill="#253C31"/><path fill="#E7F0DC" d="M30 30H46V36H36V46H30ZM62 30H78V46H72V36H62ZM30 62H36V72H46V78H30ZM72 62H78V78H62V72H72Z"/><path fill="#B8D3A6" d="M43 42H49V59Q49 64 54 64T59 59V42H65V59Q65 70 54 70T43 59Z"/></g>
+  <g fill="#253C31" font-family="sans-serif"><text x="168" y="87" font-size="48" font-weight="600">Untouched</text><text x="170" y="119" font-size="22">Privacy Lock</text><text x="170" y="153" font-size="18">Your apps. Your boundaries.</text></g>
+</svg>

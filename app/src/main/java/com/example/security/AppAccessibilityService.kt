@@ -6,70 +6,120 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.view.accessibility.AccessibilityEvent
+import androidx.core.content.ContextCompat
 import com.example.LockActivity
+import com.example.data.AppDatabase
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collectLatest
+import android.os.PowerManager
 
 class AppAccessibilityService : AccessibilityService() {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var pending: Job? = null
+    private var sessionObserver: Job? = null
+    private var registered = false
+    private var lastActivePackage: String? = null
+
+    private fun clearState() {
+        pending?.cancel()
+        pending = null
+        lastActivePackage = null
+        AppLockManager.clearTemporaryUnlocks()
+        AppLockManager.setForegroundTarget(null)
+    }
 
     private val screenOffReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (intent?.action == Intent.ACTION_SCREEN_OFF) {
-                AppLockManager.clearTemporaryUnlocks()
-            }
+            if (intent?.action == Intent.ACTION_SCREEN_OFF) clearState()
         }
     }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        AppLockManager.init(applicationContext)
-        val filter = IntentFilter(Intent.ACTION_SCREEN_OFF)
-        registerReceiver(screenOffReceiver, filter)
+        clearState()
+        sessionObserver?.cancel()
+        sessionObserver = scope.launch {
+            AppLockManager.sessionRevision.collectLatest {
+                val target = lastActivePackage ?: return@collectLatest
+                val remaining = AppLockManager.remainingSessionMillis(target) ?: return@collectLatest
+                delay(remaining)
+                val interactive = (getSystemService(POWER_SERVICE) as PowerManager).isInteractive
+                if (interactive && lastActivePackage == target && AppLockManager.serviceConnected.value) evaluateForeground(target)
+            }
+        }
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) { AppLockManager.init(applicationContext) }
+                AppLockManager.reportServiceConnected(true)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                AppLockManager.reportServiceConnected(false)
+            }
+        }
+        if (!registered) {
+            ContextCompat.registerReceiver(this, screenOffReceiver,
+                IntentFilter(Intent.ACTION_SCREEN_OFF), ContextCompat.RECEIVER_NOT_EXPORTED)
+            registered = true
+        }
     }
 
-    private var lastActivePackage: String? = null
-
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            val packageName = event.packageName?.toString() ?: return
-            
-            // Do not lock our own locker app package
-            if (packageName == applicationContext.packageName) {
-                return
-            }
+        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+        val name = event.packageName?.toString() ?: return
+        if (name == packageName && (event.className?.toString() == LockActivity::class.java.name ||
+                AppLockManager.hasVisibleLockPrompt())) return
 
-            val last = lastActivePackage
-            if (last != null && last != packageName) {
-                // If auto-lock is configured for Immediately (0 seconds), lock the previously active package
-                if (AppLockManager.getAutoLockTimeoutSeconds() == 0) {
-                    AppLockManager.lockPackage(last)
+        evaluateForeground(name)
+    }
+
+    private fun evaluateForeground(name: String) {
+        pending?.cancel()
+        val previous = lastActivePackage
+        lastActivePackage = name
+        AppLockManager.setForegroundTarget(name)
+        pending = scope.launch {
+            try {
+                val db = withContext(Dispatchers.IO) { AppDatabase.getDatabase(applicationContext) }
+                val configuration = db.securityConfigDao().getConfigDirect()
+                AppLockManager.reportServiceConnected(true)
+                if (previous != null && previous != name && (configuration?.autoLockTimeoutSeconds == 0 || db.lockedAppDao().isImmediateProfileLock(previous))) {
+                    AppLockManager.lockPackage(previous)
                 }
-            }
-            lastActivePackage = packageName
-
-            // Verify if package is locked and has not been temporarily unlocked
-            if (AppLockManager.isPackageLocked(packageName)) {
-                if (!AppLockManager.isPackageTemporarilyUnlocked(packageName)) {
-                    val intent = Intent(this, LockActivity::class.java).apply {
-                        putExtra("TARGET_PACKAGE_NAME", packageName)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                if (!AppLockManager.canProtect(applicationContext, name)) return@launch
+                // Read the current row instead of treating an empty asynchronous cache as authoritative.
+                val record = db.lockedAppDao().getApp(name)
+                if (record == null && configuration?.lockNewlyInstalledApps == true && configuration.hashedPin.isNotEmpty()) {
+                    withContext(Dispatchers.IO) {
+                        com.example.data.PrivacyRepository(db, applicationContext).syncInstalledApps(applicationContext)
                     }
-                    startActivity(intent)
                 }
+                if (lastActivePackage != name || !db.lockedAppDao().isEffectivelyLocked(name) ||
+                    AppLockManager.isPackageTemporarilyUnlocked(name)) return@launch
+                startActivity(Intent(this@AppAccessibilityService, LockActivity::class.java).apply {
+                    putExtra("TARGET_PACKAGE_NAME", name)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                })
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // Platform or database errors leave protection degraded; do not trap the device owner.
+                AppLockManager.reportServiceConnected(false)
             }
         }
     }
 
     override fun onInterrupt() {
-        // No-op
+        clearState()
+        AppLockManager.reportServiceConnected(false)
     }
 
     override fun onDestroy() {
-        try {
-            unregisterReceiver(screenOffReceiver)
-        } catch (e: Exception) {
-            // Safe fallback
-        }
+        clearState()
+        AppLockManager.reportServiceConnected(false)
+        scope.cancel()
+        if (registered) unregisterReceiver(screenOffReceiver)
+        registered = false
         super.onDestroy()
     }
 }

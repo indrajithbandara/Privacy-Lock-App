@@ -16,6 +16,7 @@ class ExampleRobolectricTest {
   fun `read string from context`() {
     val context = ApplicationProvider.getApplicationContext<Context>()
     val appName = context.getString(R.string.app_name)
-    assertEquals("Privacy Lock", appName)
+    assertEquals("Untouched", appName)
+    assertEquals("Untouched: Privacy Lock", context.getString(R.string.product_name))
   }
 }

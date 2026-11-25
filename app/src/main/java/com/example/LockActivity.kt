@@ -14,6 +14,8 @@ import androidx.biometric.BiometricPrompt
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +31,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -41,7 +48,7 @@ import com.example.data.SecurityConfig
 import com.example.security.AppLockManager
 import com.example.security.SecurityUtils
 import com.example.ui.components.SecureKeypad
-import com.example.ui.components.SimulatedAppIcon
+import com.example.ui.components.InstalledAppIcon
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.TextWarmGray
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +61,7 @@ class LockActivity : FragmentActivity() {
     private var targetPackageName: String = ""
     private var appName: String = "Application"
     private var securityConfig: SecurityConfig? = null
+    private var activePrompt: BiometricPrompt? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,7 +72,7 @@ class LockActivity : FragmentActivity() {
 
         targetPackageName = intent.getStringExtra("TARGET_PACKAGE_NAME") ?: ""
 
-        if (targetPackageName.isEmpty()) {
+        if (targetPackageName.isEmpty() || !AppLockManager.canProtect(this, targetPackageName)) {
             finish()
             return
         }
@@ -107,7 +115,7 @@ class LockActivity : FragmentActivity() {
                 else -> androidx.compose.foundation.isSystemInDarkTheme()
             }
 
-            MyApplicationTheme(darkTheme = darkTheme) {
+            MyApplicationTheme(darkTheme = darkTheme, dynamicColor = config?.themeMode == "DYNAMIC") {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -138,26 +146,66 @@ class LockActivity : FragmentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        val requested = intent.getStringExtra("TARGET_PACKAGE_NAME")
+        if (requested != targetPackageName) {
+            setIntent(intent)
+            recreate()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (targetPackageName.isNotEmpty() && !isFinishing && !isDestroyed) {
+            AppLockManager.reportLockPromptVisible(targetPackageName)
+        }
+    }
+
+    override fun onPause() {
+        AppLockManager.reportLockPromptVisible(null)
+        super.onPause()
+    }
+
     private fun unlockApp() {
-        AppLockManager.temporarilyUnlockPackage(targetPackageName)
-        finish()
+        if (isFinishing || isDestroyed) return
+        if (AppLockManager.grantForegroundSession(targetPackageName)) {
+            finish()
+        } else {
+            // A stale or disconnected request must not reveal the underlying app.
+            goHomeAndFinish()
+        }
     }
 
     private fun showBiometricPrompt() {
+        if (securityConfig?.biometricsEnabled != true || securityConfig?.hashedPin.isNullOrEmpty()) return
         val biometricManager = BiometricManager.from(this)
         val canAuthenticate = biometricManager.canAuthenticate(
-            BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
+            BiometricManager.Authenticators.BIOMETRIC_STRONG
         )
         if (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS) {
+            val cipher = com.example.security.BiometricKey.newAuthenticationCipher() ?: run {
+                android.widget.Toast.makeText(this, R.string.auth_biometric_missing, android.widget.Toast.LENGTH_LONG).show()
+                return
+            }
             val executor = ContextCompat.getMainExecutor(this)
+            activePrompt?.cancelAuthentication()
             val biometricPrompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
+                    activePrompt = null
                 }
 
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
-                    unlockApp()
+                    activePrompt = null
+                    try {
+                        val authorizedCipher = result.cryptoObject?.cipher ?: return
+                        authorizedCipher.doFinal(byteArrayOf(1))
+                        unlockApp()
+                    } catch (_: Exception) {
+                        // The PIN remains available; a failed cryptographic operation is never success.
+                    }
                 }
 
                 override fun onAuthenticationFailed() {
@@ -166,13 +214,21 @@ class LockActivity : FragmentActivity() {
             })
 
             val promptInfo = BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Unlock $appName")
-                .setSubtitle("Authenticate to access locked application")
-                .setNegativeButtonText("Use PIN")
+                .setTitle(getString(R.string.auth_unlock_app, appName))
+                .setSubtitle(getString(R.string.auth_subtitle))
+                .setNegativeButtonText(getString(R.string.auth_use_pin))
+                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
                 .build()
 
-            biometricPrompt.authenticate(promptInfo)
+            activePrompt = biometricPrompt
+            biometricPrompt.authenticate(promptInfo, BiometricPrompt.CryptoObject(cipher))
         }
+    }
+
+    override fun onDestroy() {
+        activePrompt?.cancelAuthentication()
+        activePrompt = null
+        super.onDestroy()
     }
 
     private fun goHomeAndFinish() {
@@ -195,6 +251,15 @@ fun LockScreenContent(
     onTriggerBiometric: () -> Unit
 ) {
     var pinBuffer by remember { mutableStateOf("") }
+    var verifying by remember { mutableStateOf(false) }
+    var retryAfter by remember { mutableStateOf(0L) }
+    LaunchedEffect(retryAfter) {
+        if (retryAfter > 0) {
+            kotlinx.coroutines.delay(1000)
+            retryAfter--
+        }
+    }
+
     var errorMessage by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -216,10 +281,10 @@ fun LockScreenContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(24.dp)
+            .padding(horizontal = 24.dp, vertical = 12.dp)
             .windowInsetsPadding(WindowInsets.safeDrawing),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         // Header Row
         Row(
@@ -231,7 +296,7 @@ fun LockScreenContent(
                 onClick = onCancel,
                 modifier = Modifier.testTag("lock_close_button")
             ) {
-                Icon(Icons.Default.Close, contentDescription = "Cancel and go home")
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.auth_cancel_home))
             }
 
             Icon(
@@ -244,23 +309,25 @@ fun LockScreenContent(
             Spacer(modifier = Modifier.width(48.dp))
         }
 
-        // App Details and PIN display
+        // The descriptive area can scroll; PIN feedback and keypad have their own
+        // layout space so an authentication failure is not clipped by this weight.
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
-                .weight(1f, fill = false)
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .offset(x = shakeOffset.value.dp)
         ) {
-            SimulatedAppIcon(
-                iconName = "android",
+            InstalledAppIcon(
                 packageName = packageName,
-                size = 84,
+                size = 56,
                 backgroundColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
             )
 
             Text(
-                text = "$appName is Locked",
+                text = stringResource(R.string.auth_app_locked, appName),
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp
@@ -270,15 +337,21 @@ fun LockScreenContent(
             )
 
             Text(
-                text = "Enter secure 6-digit privacy PIN to access",
+                text = stringResource(R.string.auth_enter_six),
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextWarmGray,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+        }
 
-            // PIN Dots Indicators
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // PIN Dots Indicators; accessibility exposes the length, never the value.
+            val digitStatus = stringResource(R.string.auth_digits_entered, pinBuffer.length)
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -298,17 +371,19 @@ fun LockScreenContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Text(digitStatus, style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
 
-            if (errorMessage != null) {
+            Box(Modifier.fillMaxWidth().heightIn(min = 24.dp), contentAlignment = Alignment.Center) {
+              if (retryAfter > 0 || errorMessage != null) {
                 Text(
-                    text = errorMessage!!,
+                    text = if (retryAfter > 0) stringResource(R.string.auth_retry_seconds, retryAfter) else errorMessage.orEmpty(),
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                     color = MaterialTheme.colorScheme.error,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
                 )
-            } else {
-                Spacer(modifier = Modifier.height(20.dp))
+              }
             }
         }
 
@@ -324,12 +399,12 @@ fun LockScreenContent(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Fingerprint,
-                        contentDescription = "Authenticate with fingerprint or face",
+                        contentDescription = stringResource(R.string.auth_biometric_description),
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        "Verify with Biometrics",
+                        stringResource(R.string.auth_biometric_verify),
                         style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
                     )
                 }
@@ -337,54 +412,28 @@ fun LockScreenContent(
 
             SecureKeypad(
                 onNumberClick = { num ->
-                    if (pinBuffer.length < 6) {
+                    if (!verifying && retryAfter == 0L && pinBuffer.length < 6) {
                         errorMessage = null
                         pinBuffer += num
 
                         if (pinBuffer.length == 6) {
-                            val targetHash = if (config.hashedPin.isEmpty()) {
-                                SecurityUtils.hashPin("123456")
-                            } else {
-                                config.hashedPin
-                            }
-                            val decoyHash = config.hashedDecoyPin
-                            val panicHash = config.hashedPanicPin
-                            val inputHash = SecurityUtils.hashPin(pinBuffer)
-
-                            when {
-                                inputHash == targetHash -> {
-                                    onUnlockSuccess()
-                                }
-                                decoyHash.isNotEmpty() && inputHash == decoyHash -> {
-                                    // Decoy PIN unlocks silently but puts it in decoy state
-                                    onUnlockSuccess()
-                                }
-                                panicHash.isNotEmpty() && inputHash == panicHash -> {
-                                    // Panic PIN triggers emergency exit or safety close
-                                    onCancel()
-                                }
-                                else -> {
-                                    // Log Intruder Attempt asynchronously in background
-                                    coroutineScope.launch(Dispatchers.IO) {
-                                        val db = AppDatabase.getDatabase(context)
-                                        val randomAvatarId = (1..5).random()
-                                        val maskedAttempt = "*".repeat(6)
-                                        db.intruderSelfieDao().insertSelfie(
-                                            com.example.data.IntruderSelfie(
-                                                failedPinAttempt = maskedAttempt,
-                                                avatarId = randomAvatarId
-                                            )
-                                        )
-                                        db.timelineEventDao().insertEvent(
-                                            com.example.data.TimelineEvent(
-                                                type = "INTRUDER",
-                                                description = "Intruder attempt blocked on $appName! Safe lock activated."
-                                            )
-                                        )
+                            val submitted = pinBuffer
+                            pinBuffer = ""
+                            verifying = true
+                            coroutineScope.launch {
+                                try {
+                                    val db = AppDatabase.getDatabase(context)
+                                    val repository = com.example.data.PrivacyRepository(db, context.applicationContext)
+                                    val result = repository.verifyPrimaryPin(submitted, appName)
+                                    if (result.accepted) {
+                                        onUnlockSuccess()
+                                    } else {
+                                        shakeTrigger++
+                                        retryAfter = result.retryAfterSeconds
+                                        errorMessage = context.getString(R.string.auth_denied)
                                     }
-                                    pinBuffer = ""
-                                    shakeTrigger++
-                                    errorMessage = "Incorrect security PIN. Access denied."
+                                } finally {
+                                    verifying = false
                                 }
                             }
                         }
@@ -405,7 +454,6 @@ fun LockScreenContent(
             )
 
             if (config.biometricsEnabled) {
-                // Forgot PIN option with biometric bypass
                 TextButton(
                     onClick = {
                         onTriggerBiometric()
@@ -413,7 +461,7 @@ fun LockScreenContent(
                     modifier = Modifier.padding(bottom = 12.dp)
                 ) {
                     Text(
-                        "Forgot PIN? Recover with Biometrics",
+                        stringResource(R.string.auth_use_biometric),
                         color = MaterialTheme.colorScheme.primary,
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium)
                     )

@@ -29,8 +29,15 @@ jobs:
         distribution: 'temurin'
         java-version: '21'
 
+    - name: Set up Android SDK
+      uses: android-actions/setup-android@v3
+      with:
+        packages: 'platform-tools platforms;android-36.1'
+
     - name: Setup Gradle Cache
-      uses: gradle/actions/setup-gradle@v3
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        gradle-version: '9.3.1'
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
@@ -48,7 +55,7 @@ jobs:
         else
           touch .env
         fi
-        ./gradlew assembleDebug --no-daemon
+        gradle assembleDebug --no-daemon
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3

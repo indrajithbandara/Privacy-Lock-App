@@ -14,6 +14,8 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -25,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.LockedApp
 import com.example.data.TimelineEvent
 import com.example.ui.PrivacyViewModel
+import com.example.ui.components.SecureAuthDialog
 import com.example.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -35,12 +38,15 @@ fun PrivacyCenterScreen(
     modifier: Modifier = Modifier
 ) {
     val apps by viewModel.allApps.collectAsStateWithLifecycle()
+    val effectiveLocks by viewModel.effectiveLocks.collectAsStateWithLifecycle()
     val config by viewModel.securityConfig.collectAsStateWithLifecycle()
     val timeline by viewModel.timelineEvents.collectAsStateWithLifecycle()
-    val selfies by viewModel.intruderSelfies.collectAsStateWithLifecycle()
+    val failures = timeline.count { it.type == "AUTH_FAILURE" }
+    var confirmClear by remember { mutableStateOf(false) }
+    var authenticateClear by remember { mutableStateOf(false) }
 
-    val lockedCount = remember(apps) { apps.count { it.isLocked } }
-    val safeCount = remember(apps) { apps.count { !it.isLocked } }
+    val lockedCount = apps.count { it.packageName in effectiveLocks }
+    val safeCount = apps.count { it.packageName !in effectiveLocks }
 
     LazyColumn(
         modifier = modifier
@@ -52,7 +58,7 @@ fun PrivacyCenterScreen(
         // Core Statistics Grid Rows
         item {
             Text(
-                text = "Privacy Statistics",
+                text = stringResource(R.string.privacy_statistics),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
@@ -83,7 +89,7 @@ fun PrivacyCenterScreen(
                         }
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(text = "$lockedCount", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
-                        Text(text = "Locked Apps", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
+                        Text(text = stringResource(R.string.lock_preferences), style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
                     }
                 }
 
@@ -104,11 +110,11 @@ fun PrivacyCenterScreen(
                                 .background(MutedRedAccent.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.PhotoCamera, contentDescription = null, tint = MutedRedAccent, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Warning, contentDescription = null, tint = MutedRedAccent, modifier = Modifier.size(18.dp))
                         }
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text(text = "${selfies.size}", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
-                        Text(text = "Intruders Caught", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
+                        Text(text = "$failures", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
+                        Text(text = stringResource(R.string.recent_pin_failures), style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
                     }
                 }
             }
@@ -117,7 +123,7 @@ fun PrivacyCenterScreen(
         // Actionable Recommendations Card
         item {
             Text(
-                text = "Recommended Improvements",
+                text = stringResource(R.string.recommendations),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(start = 4.dp, top = 8.dp)
@@ -135,11 +141,11 @@ fun PrivacyCenterScreen(
                     // Recommendation 1: Screenshot Shield
                     val screenshotShieldEnabled by viewModel.isScreenshotProtectionEnabled.collectAsStateWithLifecycle()
                     RecommendationItem(
-                        title = "Enable Screenshot Shield",
-                        description = "Blocks other apps and processes from recording or screenshotting your safe space.",
-                        scoreValue = "+15 Score",
+                        title = stringResource(R.string.enable_screenshot),
+                        description = stringResource(R.string.screenshot_desc),
+                        scoreValue = stringResource(R.string.off),
                         isActive = screenshotShieldEnabled,
-                        onResolve = { viewModel.setScreenshotProtection(!screenshotShieldEnabled) {} }
+                        onResolve = { viewModel.currentScreen = "settings" }
                     )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
@@ -147,22 +153,20 @@ fun PrivacyCenterScreen(
                     // Recommendation 2: Randomized Keypad Layout
                     val keypadRandomized = config?.randomizeKeypad == true
                     RecommendationItem(
-                        title = "Activate Randomized Keypad",
-                        description = "Shuffles security keys during code entry to prevent hand-tracking snoop attempts.",
-                        scoreValue = "+15 Score",
+                        title = stringResource(R.string.enable_randomized),
+                        description = stringResource(R.string.randomized_recommendation),
+                        scoreValue = stringResource(R.string.off),
                         isActive = keypadRandomized,
-                        onResolve = { viewModel.setRandomizeKeypad(!keypadRandomized) }
+                        onResolve = { viewModel.currentScreen = "settings" }
                     )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
 
-                    // Recommendation 3: Decoy Stealth PIN
-                    val decoyPinSet = config?.hashedDecoyPin?.isNotEmpty() == true
                     RecommendationItem(
-                        title = "Setup Stealth Decoy PIN",
-                        description = "Configures an alternative PIN code that unlocks into a fake empty sandbox workspace.",
-                        scoreValue = "Secure Mode",
-                        isActive = decoyPinSet,
+                        title = stringResource(R.string.configure_auth),
+                        description = stringResource(R.string.configure_auth_desc),
+                        scoreValue = stringResource(R.string.required),
+                        isActive = config?.hashedPin?.isNotEmpty() == true,
                         onResolve = { viewModel.currentScreen = "settings" }
                     )
                 }
@@ -177,14 +181,14 @@ fun PrivacyCenterScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Security Event Log",
+                    text = stringResource(R.string.event_log),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(start = 4.dp, top = 8.dp)
                 )
                 if (timeline.isNotEmpty()) {
-                    TextButton(onClick = { viewModel.clearTimeline() }) {
-                        Text("Clear log", color = MaterialTheme.colorScheme.error)
+                    TextButton(onClick = { confirmClear = true }) {
+                        Text(stringResource(R.string.clear_log), color = MaterialTheme.colorScheme.error)
                     }
                 }
             }
@@ -199,7 +203,7 @@ fun PrivacyCenterScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No security events logged yet.",
+                        text = stringResource(R.string.no_events),
                         color = TextWarmGray,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -211,6 +215,15 @@ fun PrivacyCenterScreen(
             }
         }
     }
+    if (confirmClear) {
+        AlertDialog(onDismissRequest = { confirmClear = false }, title = { Text(stringResource(R.string.clear_events_confirm)) },
+            text = { Text(stringResource(R.string.clear_events_warning)) },
+            confirmButton = { TextButton(onClick = { confirmClear = false; authenticateClear = true }) { Text(stringResource(R.string.continue_action)) } },
+            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.common_cancel)) } })
+    }
+    SecureAuthDialog(isOpen = authenticateClear, title = stringResource(R.string.confirm_event_deletion), randomizeKeypad = config?.randomizeKeypad == true,
+        isPinConfigured = config?.hashedPin?.isNotEmpty() == true, onVerify = viewModel::verifyPin,
+        onDismiss = { authenticateClear = false }, onSuccess = { authenticateClear = false; viewModel.clearTimeline() })
 }
 
 /**
@@ -243,7 +256,7 @@ fun RecommendationItem(
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        text = if (isActive) "Active" else scoreValue,
+                        text = if (isActive) stringResource(R.string.active) else scoreValue,
                         style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
                         color = if (isActive) SoftGreenAccent else SoftAmberAccent
                     )
@@ -260,7 +273,7 @@ fun RecommendationItem(
         IconButton(onClick = onResolve) {
             Icon(
                 imageVector = if (isActive) Icons.Default.CheckCircle else Icons.Default.AddCircle,
-                contentDescription = "Resolve",
+                contentDescription = stringResource(R.string.resolve),
                 tint = if (isActive) SoftGreenAccent else MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(24.dp)
             )
@@ -281,7 +294,7 @@ fun TimelineLogItem(event: TimelineEvent) {
     val (icon, tint) = when (event.type) {
         "LOCK" -> Pair(Icons.Default.Lock, PrimarySage)
         "UNLOCK" -> Pair(Icons.Default.LockOpen, SoftGreenAccent)
-        "INTRUDER" -> Pair(Icons.Default.Warning, MutedRedAccent)
+        "AUTH_FAILURE", "AUTH_LOCKOUT" -> Pair(Icons.Default.Warning, MutedRedAccent)
         else -> Pair(Icons.Default.Info, SoftAmberAccent)
     }
 
@@ -310,7 +323,16 @@ fun TimelineLogItem(event: TimelineEvent) {
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = event.description,
+                    text = when (event.type) {
+                        "AUTH_FAILURE" -> stringResource(R.string.auth_event_failure)
+                        "AUTH_LOCKOUT" -> stringResource(R.string.auth_event_lockout)
+                        "PROFILE_CREATED" -> stringResource(R.string.event_profile_created, event.description)
+                        "PROFILE_UPDATED" -> stringResource(R.string.event_profile_updated, event.description)
+                        "PROFILE_ACTIVATED" -> stringResource(R.string.event_profile_activated, event.description)
+                        "PROFILE_DEACTIVATED" -> stringResource(R.string.event_profile_deactivated, event.description)
+                        "PROFILE_DELETED" -> stringResource(R.string.event_profile_deleted, event.description)
+                        else -> event.description
+                    },
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                     color = MaterialTheme.colorScheme.onSurface
                 )
