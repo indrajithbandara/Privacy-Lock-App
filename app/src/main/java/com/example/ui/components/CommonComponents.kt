@@ -17,6 +17,7 @@ import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.LockOpen
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -279,12 +280,14 @@ fun SecureAuthDialog(
     isDecoyModeActive: Boolean,
     isPinConfigured: Boolean = true,
     vibrateOnKeyPress: Boolean = true,
-    onVerify: (String) -> String, // Returns "SUCCESS_NORMAL", "SUCCESS_DECOY", "FAILED"
+    onVerify: suspend (String) -> String, // Returns "SUCCESS_NORMAL", "SUCCESS_DECOY", "FAILED"
     onDismiss: () -> Unit,
     onSuccess: () -> Unit
 ) {
     if (!isOpen) return
 
+    val verifyScope = rememberCoroutineScope()
+    var verifying by remember { mutableStateOf(false) }
     var pinBuffer by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var attemptsCount by remember { mutableStateOf(0) }
@@ -413,33 +416,25 @@ fun SecureAuthDialog(
                 // Keypad Section
                 SecureKeypad(
                     onNumberClick = { num ->
-                        if (pinBuffer.length < 6) {
+                        if (!verifying && pinBuffer.length < 6) {
                             errorMessage = null
                             pinBuffer += num
 
                             // Auto verify on 6 digits
                             if (pinBuffer.length == 6) {
-                                when (onVerify(pinBuffer)) {
-                                    "SUCCESS_NORMAL" -> {
-                                        pinBuffer = ""
-                                        errorMessage = null
-                                        onSuccess()
-                                    }
-                                    "SUCCESS_DECOY" -> {
-                                        pinBuffer = ""
-                                        errorMessage = null
-                                        onSuccess()
-                                    }
-                                    else -> {
-                                        attemptsCount++
-                                        pinBuffer = ""
-                                        errorMessage = "Incorrect security code. Attempt recorded."
-
-                                        // Trigger decoy screen if configured and attempts > 2
-                                        if (decoyModeType == "FAKE_CRASH" && attemptsCount >= 3) {
-                                            showFakeCrash = true
-                                            attemptsCount = 0
+                                val submitted = pinBuffer
+                                pinBuffer = ""
+                                verifying = true
+                                verifyScope.launch {
+                                    try {
+                                        if (onVerify(submitted) == "SUCCESS_NORMAL") {
+                                            errorMessage = null
+                                            onSuccess()
+                                        } else {
+                                            errorMessage = "Incorrect security code. Attempt recorded."
                                         }
+                                    } finally {
+                                        verifying = false
                                     }
                                 }
                             }
