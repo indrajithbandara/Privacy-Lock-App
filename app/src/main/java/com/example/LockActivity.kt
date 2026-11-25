@@ -355,18 +355,11 @@ fun LockScreenContent(
                                     // Log Intruder Attempt asynchronously in background
                                     coroutineScope.launch(Dispatchers.IO) {
                                         val db = AppDatabase.getDatabase(context)
-                                        val randomAvatarId = (1..5).random()
-                                        val maskedAttempt = "*".repeat(6)
-                                        db.intruderSelfieDao().insertSelfie(
-                                            com.example.data.IntruderSelfie(
-                                                failedPinAttempt = maskedAttempt,
-                                                avatarId = randomAvatarId
-                                            )
-                                        )
                                         db.timelineEventDao().insertEvent(
                                             com.example.data.TimelineEvent(
-                                                type = "INTRUDER",
-                                                description = "Intruder attempt blocked on $appName! Safe lock activated."
+                                                type = "AUTH_FAILURE",
+                                                description = "Incorrect PIN entered.",
+                                                appName = appName
                                             )
                                         )
                                     }
