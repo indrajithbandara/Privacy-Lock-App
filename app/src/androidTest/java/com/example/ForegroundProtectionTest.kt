@@ -5,6 +5,12 @@ import android.graphics.Rect
 import android.os.Build
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.click
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.data.AppDatabase
@@ -15,11 +21,13 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.first
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.Rule
 import org.junit.runner.RunWith
 
 /** Exercises real Android window events against a separately installed, harmless fixture APK. */
 @RunWith(AndroidJUnit4::class)
 class ForegroundProtectionTest {
+    @get:Rule val compose = createEmptyComposeRule()
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context = instrumentation.targetContext
     private val fixture = "com.example.protectionfixture"
@@ -103,14 +111,12 @@ class ForegroundProtectionTest {
     private fun launchFixture() { shell("am start -W -n $fixture/.FixtureActivity") }
     private fun enterPin(pin: String) {
         pin.forEachIndexed { index, digit ->
-            eventually("visible keypad digit") {
-                nodes().firstOrNull { it.isVisibleToUser && it.text?.toString() == digit.toString() }?.let(::clickNode) == true
-            }
-            // Let Compose consume the touch and recompose before the next digit.
-            SystemClock.sleep(350)
+            // Interact with the real LockActivity Compose node, not a separate test activity
+            // or a fake credential callback. Android window assertions remain external.
+            compose.onNodeWithTag("keypad_btn_$digit").assertIsDisplayed().performTouchInput { click() }
             if (index < pin.lastIndex) {
                 val expected = context.getString(R.string.auth_digits_entered, index + 1)
-                eventually("PIN length indicator ${index + 1}") { hasText(expected) }
+                compose.waitUntil(timeoutMillis = 15_000) { compose.onAllNodesWithText(expected).fetchSemanticsNodes().isNotEmpty() }
                 android.util.Log.i("ForegroundProtectionTest", "Verified keypad length ${index + 1}")
             }
         }
