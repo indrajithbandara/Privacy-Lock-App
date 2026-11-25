@@ -1,4 +1,6 @@
 # Add project specific ProGuard rules here.
+# Preserve SQLCipher JNI entry points while the application itself is optimized.
+-keep class net.zetetic.database.sqlcipher.** { *; }
 # You can control the set of applied configuration files using the
 # proguardFiles setting in build.gradle.
 #
