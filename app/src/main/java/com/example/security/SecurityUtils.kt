@@ -4,22 +4,14 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import java.security.MessageDigest
 import java.security.SecureRandom
 
 object SecurityUtils {
 
     private val secureRandom = SecureRandom()
 
-    /**
-     * Hashes a PIN or Password using SHA-256 with a local salt.
-     */
-    fun hashPin(pin: String, salt: String = "PrivacyLockSaltEnterprise"): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        val combined = pin + salt
-        val hashBytes = digest.digest(combined.toByteArray(Charsets.UTF_8))
-        return hashBytes.joinToString("") { "%02x".format(it) }
-    }
+    fun hashPin(pin: String): String =
+        PinCredentials.create(pin, android.os.Build.VERSION.SDK_INT >= 26)
 
     /**
      * Generates a 4-digit secret key for Stealth Dial mode.
