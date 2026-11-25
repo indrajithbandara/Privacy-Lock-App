@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_apps">යෙදුම්</string>
+    <string name="nav_center">මධ්‍යස්ථානය</string>
+    <string name="nav_events">සිදුවීම්</string>
+    <string name="nav_settings">සැකසුම්</string>
+    <string name="storage_unavailable">ගබඩාව ලබාගත නොහැක</string>
+    <string name="storage_preserved">ඔබගේ දත්ත මකා දමා නැත. ආරක්ෂාව ක්‍රියා නොකරනු ඇතැයි සැලකිය හැක.</string>
+    <string name="retry">නැවත උත්සාහ කරන්න</string>
+    <string name="opening_storage">ආරක්ෂිත ගබඩාව විවෘත කරමින්</string>
+    <string name="your_apps">ඔබගේ යෙදුම්</string>
+    <string name="choose_apps">සත්‍යාපනය අවශ්‍ය ස්ථාපිත යෙදුම් තෝරන්න.</string>
+    <string name="protection_configured">ආරක්ෂාව සකසා ඇත</string>
+    <string name="protection_attention">ආරක්ෂාව පිළිබඳ අවධානය අවශ්‍යයි</string>
+    <string name="selected_count">අගුළු දැමීමට යෙදුම් %1$dක් තෝරා ඇත</string>
+    <string name="platform_limitation">ප්‍රවේශ්‍යතා සේවාව මත පදනම් වූ යෙදුම් අගුල පද්ධති ආරක්ෂක සීමාවක් නොවේ. උපාංගය හා Android අනුව ප්‍රතිඵල වෙනස් විය හැක.</string>
+    <string name="setup_pin">PIN එක සකසන්න</string>
+    <string name="accessibility_settings">ප්‍රවේශ්‍යතා සැකසුම්</string>
+    <string name="search_installed">ස්ථාපිත යෙදුම් සොයන්න</string>
+    <string name="filter_all">සියල්ල</string>
+    <string name="filter_locked">අගුළු දැමූ</string>
+    <string name="filter_unlocked">අගුළු නොදැමූ</string>
+    <string name="filter_pinned">ඉහළට සවි කළ</string>
+    <string name="no_eligible_apps">ගැළපෙන යෙදුම් නැත. පද්ධති සහ launcher යෙදුම් බැහැර කර ඇත.</string>
+    <string name="lock_configured">අගුල සකසා ඇත</string>
+    <string name="lock_not_configured">සකසා නැත</string>
+    <string name="open_app">විවෘත කරන්න</string>
+    <string name="pin_app">%1$s ඉහළට සවි කරන්න</string>
+    <string name="unpin_app">%1$s සවි කිරීම ඉවත් කරන්න</string>
+    <string name="security_events">ආරක්ෂක සිදුවීම්</string>
+    <string name="events_privacy">දේශීය සත්‍යාපන අසාර්ථකවීම් සහ තාවකාලික අගුළු. ඡායාරූප හෝ PIN අගයන් එකතු නොකෙරේ.</string>
+    <string name="no_auth_events">මෑත සත්‍යාපන අසාර්ථකවීම් වාර්තා වී නැත.</string>
+    <string name="protection_unavailable">ආරක්ෂාව ලබාගත නොහැක. මුලින් ප්‍රවේශ්‍යතා සේවාව සක්‍රිය කරන්න.</string>
+    <string name="app_unavailable">යෙදුම ලබාගත නොහැක</string>
+    <string name="cannot_open_app">යෙදුම විවෘත කළ නොහැක</string>
+    <string name="confirm_protection_change">ආරක්ෂක වෙනස තහවුරු කරන්න</string>
+</resources>

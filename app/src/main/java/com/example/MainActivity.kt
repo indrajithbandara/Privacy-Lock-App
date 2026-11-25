@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -59,12 +60,12 @@ class MainActivity : ComponentActivity() {
                         Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center) {
                             if (failed) {
-                                Text("Storage unavailable", style = MaterialTheme.typography.headlineSmall)
-                                Text("Your data has not been reset. Protection may be unavailable.")
-                                Button(onClick = { attempt++ }) { Text("Retry") }
+                                Text(stringResource(R.string.storage_unavailable), style = MaterialTheme.typography.headlineSmall)
+                                Text(stringResource(R.string.storage_preserved))
+                                Button(onClick = { attempt++ }) { Text(stringResource(R.string.retry)) }
                             } else {
                                 CircularProgressIndicator()
-                                Text("Opening secure storage", Modifier.padding(top = 16.dp))
+                                Text(stringResource(R.string.opening_storage), Modifier.padding(top = 16.dp))
                             }
                         }
                     }
@@ -96,10 +97,10 @@ fun PrivacyLockApp(viewModel: PrivacyViewModel, onScreenshotShieldToggle: (Boole
     Scaffold(bottomBar = {
         NavigationBar(modifier = Modifier.testTag("app_navigation_bar")) {
             val destinations = listOf(
-                Triple("dashboard", "Apps", Icons.Default.Dashboard),
-                Triple("privacy_center", "Center", Icons.Default.Shield),
-                Triple("intruders", "Events", Icons.Default.History),
-                Triple("settings", "Settings", Icons.Default.Settings)
+                Triple("dashboard", stringResource(R.string.nav_apps), Icons.Default.Dashboard),
+                Triple("privacy_center", stringResource(R.string.nav_center), Icons.Default.Shield),
+                Triple("intruders", stringResource(R.string.nav_events), Icons.Default.History),
+                Triple("settings", stringResource(R.string.nav_settings), Icons.Default.Settings)
             )
             destinations.forEach { (route, label, icon) ->
                 NavigationBarItem(selected = viewModel.currentScreen == route,
@@ -114,12 +115,12 @@ fun PrivacyLockApp(viewModel: PrivacyViewModel, onScreenshotShieldToggle: (Boole
                     pendingChange = app to locked
                 }, onLaunchApp = { app ->
                     if (app.isLocked && (!SecurityUtils.isAccessibilityServiceEnabled(context) || !AppLockManager.serviceConnected.value)) {
-                        Toast.makeText(context, "Protection is unavailable. Enable the accessibility service first.", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, context.getString(R.string.protection_unavailable), Toast.LENGTH_LONG).show()
                     } else {
                         val launch = context.packageManager.getLaunchIntentForPackage(app.packageName)
-                        if (launch == null) Toast.makeText(context, "Application unavailable", Toast.LENGTH_SHORT).show()
+                        if (launch == null) Toast.makeText(context, context.getString(R.string.app_unavailable), Toast.LENGTH_SHORT).show()
                         else try { context.startActivity(launch) } catch (_: Exception) {
-                            Toast.makeText(context, "Unable to open application", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.cannot_open_app), Toast.LENGTH_SHORT).show()
                         }
                     }
                 })
@@ -128,7 +129,7 @@ fun PrivacyLockApp(viewModel: PrivacyViewModel, onScreenshotShieldToggle: (Boole
                 "settings" -> SettingsScreen(viewModel, onScreenshotShieldToggle = onScreenshotShieldToggle)
             }
         }
-        SecureAuthDialog(isOpen = pendingChange != null, title = "Confirm protection change",
+        SecureAuthDialog(isOpen = pendingChange != null, title = stringResource(R.string.confirm_protection_change),
             randomizeKeypad = config?.randomizeKeypad == true,
             isPinConfigured = config?.hashedPin?.isNotEmpty() == true,
             onVerify = viewModel::verifyPin,

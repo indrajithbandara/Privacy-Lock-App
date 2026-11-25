@@ -11,6 +11,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.example.R
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
@@ -64,8 +66,8 @@ fun DashboardScreen(viewModel: PrivacyViewModel, modifier: Modifier = Modifier, 
     }
     LazyColumn(modifier.fillMaxSize().padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp), contentPadding = PaddingValues(vertical = 20.dp)) {
         item {
-            Text("Your apps", style = MaterialTheme.typography.headlineLarge)
-            Text("Choose which installed apps require authentication.", style = MaterialTheme.typography.bodyMedium,
+            Text(stringResource(R.string.your_apps), style = MaterialTheme.typography.headlineLarge)
+            Text(stringResource(R.string.choose_apps), style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
@@ -73,26 +75,26 @@ fun DashboardScreen(viewModel: PrivacyViewModel, modifier: Modifier = Modifier, 
                 containerColor = if (ready) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant)) {
                 Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Icon(if (ready) Icons.Default.Shield else Icons.Default.Info, contentDescription = null)
-                    Text(if (ready) "Protection is configured" else "Protection needs attention", style = MaterialTheme.typography.titleLarge)
-                    Text("$configuredCount apps selected for locking", style = MaterialTheme.typography.bodyLarge)
-                    Text("Accessibility-based app locking is not a system security boundary. Access may differ by device and Android version.", style = MaterialTheme.typography.bodySmall)
-                    if (!enrolled) Button(onClick = { viewModel.currentScreen = "settings" }) { Text("Set up PIN") }
-                    if (!permission || !connected) OutlinedButton(onClick = { SecurityUtils.requestAccessibilityPermission(context) }) { Text("Accessibility settings") }
+                    Text(if (ready) stringResource(R.string.protection_configured) else stringResource(R.string.protection_attention), style = MaterialTheme.typography.titleLarge)
+                    Text(stringResource(R.string.selected_count, configuredCount), style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(R.string.platform_limitation), style = MaterialTheme.typography.bodySmall)
+                    if (!enrolled) Button(onClick = { viewModel.currentScreen = "settings" }) { Text(stringResource(R.string.setup_pin)) }
+                    if (!permission || !connected) OutlinedButton(onClick = { SecurityUtils.requestAccessibilityPermission(context) }) { Text(stringResource(R.string.accessibility_settings)) }
                 }
             }
         }
         item {
             OutlinedTextField(value = viewModel.searchQuery, onValueChange = { viewModel.searchQuery = it },
-                label = { Text("Search installed apps") }, leadingIcon = { Icon(Icons.Default.Search, null) },
+                label = { Text(stringResource(R.string.search_installed)) }, leadingIcon = { Icon(Icons.Default.Search, null) },
                 singleLine = true, modifier = Modifier.fillMaxWidth().testTag("app_search_input"), shape = RoundedCornerShape(16.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(listOf("All", "Locked", "Unlocked", "Pinned")) { filter ->
-                    FilterChip(selected = viewModel.selectedCategory == filter, onClick = { viewModel.selectedCategory = filter }, label = { Text(filter) })
+                    FilterChip(selected = viewModel.selectedCategory == filter, onClick = { viewModel.selectedCategory = filter }, label = { Text(stringResource(when (filter) { "Locked" -> R.string.filter_locked; "Unlocked" -> R.string.filter_unlocked; "Pinned" -> R.string.filter_pinned; else -> R.string.filter_all })) })
                 }
             }
         }
         if (filtered.isEmpty()) item {
-            Text("No matching eligible apps. System and launcher apps are excluded.", Modifier.padding(vertical = 24.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.no_eligible_apps), Modifier.padding(vertical = 24.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         items(filtered, key = { it.packageName }) { app ->
             Card(Modifier.fillMaxWidth().testTag("app_row_${app.packageName}"), shape = RoundedCornerShape(16.dp)) {
@@ -100,11 +102,11 @@ fun DashboardScreen(viewModel: PrivacyViewModel, modifier: Modifier = Modifier, 
                     SimulatedAppIcon(iconName = app.iconName, packageName = app.packageName, size = 44)
                     Column(Modifier.weight(1f)) {
                         Text(app.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(if (app.isLocked) "Lock configured" else "Not configured", style = MaterialTheme.typography.bodySmall)
-                        TextButton(onClick = { onLaunchApp(app) }, contentPadding = PaddingValues(0.dp)) { Text("Open") }
+                        Text(if (app.isLocked) stringResource(R.string.lock_configured) else stringResource(R.string.lock_not_configured), style = MaterialTheme.typography.bodySmall)
+                        TextButton(onClick = { onLaunchApp(app) }, contentPadding = PaddingValues(0.dp)) { Text(stringResource(R.string.open_app)) }
                     }
                     IconButton(onClick = { viewModel.toggleAppPinned(app.packageName, !app.isPinned) }) {
-                        Icon(Icons.Default.PushPin, if (app.isPinned) "Unpin ${app.name}" else "Pin ${app.name}", tint = if (app.isPinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                        Icon(Icons.Default.PushPin, if (app.isPinned) stringResource(R.string.unpin_app, app.name) else stringResource(R.string.pin_app, app.name), tint = if (app.isPinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(checked = app.isLocked, enabled = enrolled, onCheckedChange = { onLockChange(app, it) }, modifier = Modifier.testTag("lock_switch_${app.packageName}"))
                 }

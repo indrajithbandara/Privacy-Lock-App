@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nav_apps">செயலிகள்</string>
+    <string name="nav_center">மையம்</string>
+    <string name="nav_events">நிகழ்வுகள்</string>
+    <string name="nav_settings">அமைப்புகள்</string>
+    <string name="storage_unavailable">சேமிப்பகம் கிடைக்கவில்லை</string>
+    <string name="storage_preserved">உங்கள் தரவு மீட்டமைக்கப்படவில்லை. பாதுகாப்பு கிடைக்காமல் இருக்கலாம்.</string>
+    <string name="retry">மீண்டும் முயலவும்</string>
+    <string name="opening_storage">பாதுகாப்பான சேமிப்பகத்தைத் திறக்கிறது</string>
+    <string name="your_apps">உங்கள் செயலிகள்</string>
+    <string name="choose_apps">அங்கீகாரம் தேவைப்படும் நிறுவப்பட்ட செயலிகளைத் தேர்ந்தெடுக்கவும்.</string>
+    <string name="protection_configured">பாதுகாப்பு அமைக்கப்பட்டுள்ளது</string>
+    <string name="protection_attention">பாதுகாப்புக்குக் கவனம் தேவை</string>
+    <string name="selected_count">பூட்ட %1$d செயலிகள் தேர்ந்தெடுக்கப்பட்டுள்ளன</string>
+    <string name="platform_limitation">அணுகல்தன்மை சார்ந்த செயலிப் பூட்டு, இயக்க முறைமையின் பாதுகாப்பு எல்லை அல்ல. சாதனம் மற்றும் Android பதிப்பைப் பொறுத்து அணுகல் மாறலாம்.</string>
+    <string name="setup_pin">PIN அமைக்கவும்</string>
+    <string name="accessibility_settings">அணுகல்தன்மை அமைப்புகள்</string>
+    <string name="search_installed">நிறுவப்பட்ட செயலிகளைத் தேடவும்</string>
+    <string name="filter_all">அனைத்தும்</string>
+    <string name="filter_locked">பூட்டப்பட்டவை</string>
+    <string name="filter_unlocked">பூட்டப்படாதவை</string>
+    <string name="filter_pinned">பின் செய்யப்பட்டவை</string>
+    <string name="no_eligible_apps">பொருந்தும் தகுதியான செயலிகள் இல்லை. கணினி மற்றும் துவக்கி செயலிகள் விலக்கப்பட்டுள்ளன.</string>
+    <string name="lock_configured">பூட்டு அமைக்கப்பட்டுள்ளது</string>
+    <string name="lock_not_configured">அமைக்கப்படவில்லை</string>
+    <string name="open_app">திறக்கவும்</string>
+    <string name="pin_app">%1$s ஐ பின் செய்யவும்</string>
+    <string name="unpin_app">%1$s ஐ பின் நீக்கவும்</string>
+    <string name="security_events">பாதுகாப்பு நிகழ்வுகள்</string>
+    <string name="events_privacy">உள்ளூர் அங்கீகாரத் தோல்விகள் மற்றும் தற்காலிகப் பூட்டுகள். புகைப்படங்களோ PIN மதிப்புகளோ சேகரிக்கப்படுவதில்லை.</string>
+    <string name="no_auth_events">சமீபத்திய அங்கீகாரத் தோல்விகள் பதிவாகவில்லை.</string>
+    <string name="protection_unavailable">பாதுகாப்பு கிடைக்கவில்லை. முதலில் அணுகல்தன்மைச் சேவையை இயக்கவும்.</string>
+    <string name="app_unavailable">செயலி கிடைக்கவில்லை</string>
+    <string name="cannot_open_app">செயலியைத் திறக்க முடியவில்லை</string>
+    <string name="confirm_protection_change">பாதுகாப்பு மாற்றத்தை உறுதிப்படுத்தவும்</string>
+</resources>
