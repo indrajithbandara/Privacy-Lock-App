@@ -1,6 +1,9 @@
 package com.example.security
 
 import android.content.Context
+import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import com.example.data.AppDatabase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +27,33 @@ object AppLockManager {
     private var isInitialized = false
     private var autoLockTimeoutSeconds = 0
 
+    @Volatile private var foregroundTarget: String? = null
+
+    fun setForegroundTarget(packageName: String?) {
+        val previous = foregroundTarget
+        foregroundTarget = packageName
+        if (previous != null && previous != packageName && getAutoLockTimeoutSeconds() == 0) {
+            lockPackage(previous)
+        }
+    }
+
+    fun isForegroundTarget(packageName: String): Boolean = foregroundTarget == packageName
+
+    /** Keep owner controls and system functions outside the locker's scope. */
+    fun canProtect(context: Context, packageName: String): Boolean {
+        if (packageName == context.packageName) return false
+        return try {
+            val pm = context.packageManager
+            val info = pm.getApplicationInfo(packageName, 0)
+            if (info.flags and ApplicationInfo.FLAG_SYSTEM != 0) return false
+            if (pm.getLaunchIntentForPackage(packageName) == null) return false
+            val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+            pm.queryIntentActivities(home, PackageManager.MATCH_DEFAULT_ONLY)
+                .none { it.activityInfo.packageName == packageName }
+        } catch (_: Exception) { false }
+    }
+
+    @Synchronized
     fun init(context: Context) {
         if (isInitialized) return
         isInitialized = true
@@ -35,15 +65,20 @@ object AppLockManager {
                     lockedPackages.clear()
                     lockedPackages.addAll(locked)
                 }
+                val removed = _lockedAppsFlow.value - locked
+                removed.forEach { lockPackage(it) }
                 _lockedAppsFlow.value = locked
             }
         }
         CoroutineScope(Dispatchers.IO).launch {
             db.securityConfigDao().getConfig().collect { config ->
                 if (config != null) {
-                    synchronized(this@AppLockManager) {
+                    val changed = synchronized(this@AppLockManager) {
+                        val changed = autoLockTimeoutSeconds != config.autoLockTimeoutSeconds
                         autoLockTimeoutSeconds = config.autoLockTimeoutSeconds
+                        changed
                     }
+                    if (changed) clearTemporaryUnlocks()
                 }
             }
         }
