@@ -101,6 +101,8 @@ dependencies {
   implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.room.ktx)
   implementation(libs.androidx.room.runtime)
+  implementation("net.zetetic:sqlcipher-android:4.20.0@aar")
+  implementation("androidx.sqlite:sqlite:2.7.0")
   // implementation(libs.coil.compose)
   implementation(libs.converter.moshi)
   // implementation(libs.firebase.ai)
