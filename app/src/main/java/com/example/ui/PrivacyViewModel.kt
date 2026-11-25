@@ -439,22 +439,14 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
     fun verifyPin(pin: String): String {
         val config = securityConfig.value ?: return "FAILED"
         
-        // Secure Fallback: if master PIN is not configured yet, treat "123456" as the default PIN
-        val targetPinHash = if (config.hashedPin.isEmpty()) {
-            SecurityUtils.hashPin("123456")
-        } else {
-            config.hashedPin
-        }
+        val targetPinHash = config.hashedPin
+        if (targetPinHash.isEmpty()) return "FAILED"
         val hashedInput = SecurityUtils.hashPin(pin)
 
         return when {
             hashedInput == targetPinHash -> {
                 isDecoyModeActive = false
                 "SUCCESS_NORMAL"
-            }
-            config.hashedDecoyPin.isNotEmpty() && hashedInput == config.hashedDecoyPin -> {
-                isDecoyModeActive = true
-                "SUCCESS_DECOY"
             }
             else -> {
                 // Record intruder selfie
