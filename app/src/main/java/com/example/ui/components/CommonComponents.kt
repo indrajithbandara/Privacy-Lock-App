@@ -113,7 +113,7 @@ fun SimulatedAppIcon(
     ) {
         Icon(
             imageVector = vector,
-            contentDescription = "Simulated $iconName icon",
+            contentDescription = "Generic application icon",
             tint = color,
             modifier = Modifier.size((size * 0.55f).dp)
         )
@@ -240,7 +240,6 @@ fun SecureKeypad(
         }
     }
 }
-
 @Composable
 fun KeypadButton(
     text: String,
@@ -276,11 +275,9 @@ fun SecureAuthDialog(
     isOpen: Boolean,
     title: String,
     randomizeKeypad: Boolean,
-    decoyModeType: String, // "NONE", "FAKE_CRASH"
-    isDecoyModeActive: Boolean,
     isPinConfigured: Boolean = true,
     vibrateOnKeyPress: Boolean = true,
-    onVerify: suspend (String) -> String, // Returns "SUCCESS_NORMAL", "SUCCESS_DECOY", "FAILED"
+    onVerify: suspend (String) -> String,
     onDismiss: () -> Unit,
     onSuccess: () -> Unit
 ) {
@@ -298,19 +295,6 @@ fun SecureAuthDialog(
 
     var pinBuffer by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    var attemptsCount by remember { mutableStateOf(0) }
-    var showFakeCrash by remember { mutableStateOf(false) }
-
-    // Fake crash behavior helper
-    if (showFakeCrash) {
-        FakeCrashScreen(onClose = {
-            showFakeCrash = false
-            pinBuffer = ""
-            errorMessage = null
-            onDismiss()
-        })
-        return
-    }
 
     Dialog(
         onDismissRequest = {
@@ -463,69 +447,6 @@ fun SecureAuthDialog(
                     vibrateOnKeyPress = vibrateOnKeyPress,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
-            }
-        }
-    }
-}
-
-/**
- * Interactive full-screen Fake Crash Decoy Screen
- */
-@Composable
-fun FakeCrashScreen(onClose: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = Color(0xFF1C1B1F)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(32.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
-                    .background(Color(0xFFEA4335).copy(alpha = 0.15f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = Color(0xFFEA4335),
-                    modifier = Modifier.size(36.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "PrivacyLock has stopped",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = Color.White,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "An unexpected error occurred. The application must close. Please try again later.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.LightGray,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Button(
-                onClick = onClose,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F3F3F)),
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth(0.7f)
-            ) {
-                Text("Close app", color = Color.White)
             }
         }
     }

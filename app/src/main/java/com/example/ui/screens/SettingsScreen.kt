@@ -370,40 +370,6 @@ fun SettingsScreen(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
 
-                    // Decoy Mode selection
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(SoftAmberAccent.copy(alpha = 0.12f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.ReportProblem, contentDescription = null, tint = SoftAmberAccent, modifier = Modifier.size(18.dp))
-                        }
-                        Spacer(modifier = Modifier.width(14.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Decoy Lock screen", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text(text = "Simulate mock app stops after failures", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
-                        }
-                        val decoyModeActive = config?.decoyModeType == "FAKE_CRASH"
-                        Switch(
-                            checked = decoyModeActive,
-                            onCheckedChange = { active ->
-                                viewModel.setDecoyModeType(if (active) "FAKE_CRASH" else "NONE")
-                            },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary
-                            ),
-                            modifier = Modifier.testTag("decoy_crash_switch")
-                        )
-                    }
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
 
                     // Intruder Detection Threshold
                     val failedLimit = config?.failedAttemptLimit ?: 5

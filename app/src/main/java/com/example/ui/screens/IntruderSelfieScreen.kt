@@ -18,10 +18,10 @@ fun IntruderSelfieScreen(
     modifier: Modifier = Modifier
 ) {
     val timeline by viewModel.timelineEvents.collectAsStateWithLifecycle()
-    val events = timeline.filter { it.type == "AUTH_FAILURE" }
+    val events = timeline.filter { it.type == "AUTH_FAILURE" || it.type == "AUTH_LOCKOUT" }
     Column(modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text("Security events", style = MaterialTheme.typography.headlineSmall)
-        Text("Local authentication failures. No photographs or PIN values are collected.",
+        Text("Local authentication failures and lockouts. No photographs or PIN values are collected.",
             style = MaterialTheme.typography.bodyMedium)
         if (events.isEmpty()) {
             Text("No recent authentication failures recorded.")

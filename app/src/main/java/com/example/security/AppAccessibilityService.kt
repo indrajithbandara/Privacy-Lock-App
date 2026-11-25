@@ -34,7 +34,16 @@ class AppAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         clearState()
-        AppLockManager.init(applicationContext)
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) { AppLockManager.init(applicationContext) }
+                AppLockManager.reportServiceConnected(true)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                AppLockManager.reportServiceConnected(false)
+            }
+        }
         if (!registered) {
             ContextCompat.registerReceiver(this, screenOffReceiver,
                 IntentFilter(Intent.ACTION_SCREEN_OFF), ContextCompat.RECEIVER_NOT_EXPORTED)
@@ -55,6 +64,7 @@ class AppAccessibilityService : AccessibilityService() {
             try {
                 val db = withContext(Dispatchers.IO) { AppDatabase.getDatabase(applicationContext) }
                 val configuration = db.securityConfigDao().getConfigDirect()
+                AppLockManager.reportServiceConnected(true)
                 if (previous != null && previous != name && configuration?.autoLockTimeoutSeconds == 0) {
                     AppLockManager.lockPackage(previous)
                 }
@@ -71,15 +81,19 @@ class AppAccessibilityService : AccessibilityService() {
                 throw cancelled
             } catch (_: Exception) {
                 // Platform or database errors leave protection degraded; do not trap the device owner.
-                AppLockManager.clearTemporaryUnlocks()
+                AppLockManager.reportServiceConnected(false)
             }
         }
     }
 
-    override fun onInterrupt() = clearState()
+    override fun onInterrupt() {
+        clearState()
+        AppLockManager.reportServiceConnected(false)
+    }
 
     override fun onDestroy() {
         clearState()
+        AppLockManager.reportServiceConnected(false)
         scope.cancel()
         if (registered) unregisterReceiver(screenOffReceiver)
         registered = false

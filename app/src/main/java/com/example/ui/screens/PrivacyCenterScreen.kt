@@ -37,7 +37,7 @@ fun PrivacyCenterScreen(
     val apps by viewModel.allApps.collectAsStateWithLifecycle()
     val config by viewModel.securityConfig.collectAsStateWithLifecycle()
     val timeline by viewModel.timelineEvents.collectAsStateWithLifecycle()
-    val selfies by viewModel.intruderSelfies.collectAsStateWithLifecycle()
+    val failures = timeline.count { it.type == "AUTH_FAILURE" }
 
     val lockedCount = remember(apps) { apps.count { it.isLocked } }
     val safeCount = remember(apps) { apps.count { !it.isLocked } }
@@ -83,7 +83,7 @@ fun PrivacyCenterScreen(
                         }
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(text = "$lockedCount", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
-                        Text(text = "Locked Apps", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
+                        Text(text = "Lock preferences", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
                     }
                 }
 
@@ -104,11 +104,11 @@ fun PrivacyCenterScreen(
                                 .background(MutedRedAccent.copy(alpha = 0.15f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.PhotoCamera, contentDescription = null, tint = MutedRedAccent, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Warning, contentDescription = null, tint = MutedRedAccent, modifier = Modifier.size(18.dp))
                         }
                         Spacer(modifier = Modifier.height(12.dp))
-                        Text(text = "${selfies.size}", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
-                        Text(text = "Intruders Caught", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
+                        Text(text = "$failures", style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
+                        Text(text = "Recent PIN failures", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
                     }
                 }
             }
@@ -136,8 +136,8 @@ fun PrivacyCenterScreen(
                     val screenshotShieldEnabled by viewModel.isScreenshotProtectionEnabled.collectAsStateWithLifecycle()
                     RecommendationItem(
                         title = "Enable Screenshot Shield",
-                        description = "Blocks other apps and processes from recording or screenshotting your safe space.",
-                        scoreValue = "+15 Score",
+                        description = "Requests Android screenshot protection for this application's own window.",
+                        scoreValue = "Off",
                         isActive = screenshotShieldEnabled,
                         onResolve = { viewModel.setScreenshotProtection(!screenshotShieldEnabled) {} }
                     )
@@ -148,21 +148,19 @@ fun PrivacyCenterScreen(
                     val keypadRandomized = config?.randomizeKeypad == true
                     RecommendationItem(
                         title = "Activate Randomized Keypad",
-                        description = "Shuffles security keys during code entry to prevent hand-tracking snoop attempts.",
-                        scoreValue = "+15 Score",
+                        description = "Shuffles keypad digits to reduce predictable patterns.",
+                        scoreValue = "Off",
                         isActive = keypadRandomized,
                         onResolve = { viewModel.setRandomizeKeypad(!keypadRandomized) }
                     )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
 
-                    // Recommendation 3: Decoy Stealth PIN
-                    val decoyPinSet = config?.hashedDecoyPin?.isNotEmpty() == true
                     RecommendationItem(
-                        title = "Setup Stealth Decoy PIN",
-                        description = "Configures an alternative PIN code that unlocks into a fake empty sandbox workspace.",
-                        scoreValue = "Secure Mode",
-                        isActive = decoyPinSet,
+                        title = "Configure authentication",
+                        description = "Set or change your primary PIN in Settings.",
+                        scoreValue = "Required",
+                        isActive = config?.hashedPin?.isNotEmpty() == true,
                         onResolve = { viewModel.currentScreen = "settings" }
                     )
                 }
@@ -281,7 +279,7 @@ fun TimelineLogItem(event: TimelineEvent) {
     val (icon, tint) = when (event.type) {
         "LOCK" -> Pair(Icons.Default.Lock, PrimarySage)
         "UNLOCK" -> Pair(Icons.Default.LockOpen, SoftGreenAccent)
-        "INTRUDER" -> Pair(Icons.Default.Warning, MutedRedAccent)
+        "AUTH_FAILURE", "AUTH_LOCKOUT" -> Pair(Icons.Default.Warning, MutedRedAccent)
         else -> Pair(Icons.Default.Info, SoftAmberAccent)
     }
 

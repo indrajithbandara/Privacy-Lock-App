@@ -122,36 +122,6 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
         apps
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Calculate dynamic privacy score (0-100)
-    val privacyScore: StateFlow<Int> = combine(allApps, securityConfig) { apps, config ->
-        if (config == null) return@combine 20
-        var score = 20 // Base score
-
-        // 1. PIN set up
-        if (config.hashedPin.isNotEmpty()) {
-            score += 25
-        }
-        // 2. Screenshot protection
-        if (config.screenshotProtection) {
-            score += 15
-        }
-        // 3. Randomized keypad
-        if (config.randomizeKeypad) {
-            score += 15
-        }
-        // 4. Critical system apps locked (com.android.settings, com.android.vending)
-        val criticalApps = apps.filter { 
-            it.packageName == "com.android.settings" || it.packageName == "com.android.vending"
-        }
-        val lockedCriticalCount = criticalApps.count { it.isLocked }
-        if (lockedCriticalCount == 2) {
-            score += 25
-        } else if (lockedCriticalCount == 1) {
-            score += 10
-        }
-
-        score.coerceIn(0, 100)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 20)
 
     // --- Actions ---
 

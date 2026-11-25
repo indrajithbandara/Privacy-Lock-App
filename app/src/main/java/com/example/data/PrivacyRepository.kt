@@ -13,6 +13,7 @@ import com.example.security.CredentialEnvelope
 import com.example.security.SecurityUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import androidx.room.withTransaction
 
 class PrivacyRepository(private val db: AppDatabase, private val context: Context) {
 
@@ -35,7 +36,10 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
     }
 
     suspend fun saveConfig(config: SecurityConfig) {
-        configDao.insertConfig(config)
+        db.withTransaction {
+            val current = configDao.getConfigDirect()
+            configDao.insertConfig(if (current == null) config else config.copy(hashedPin = current.hashedPin))
+        }
     }
 
     suspend fun changePrimaryPin(currentPin: String, newPin: String): Boolean {

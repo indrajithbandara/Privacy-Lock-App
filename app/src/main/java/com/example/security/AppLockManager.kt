@@ -23,6 +23,13 @@ object AppLockManager {
 
     private val _lockedAppsFlow = MutableStateFlow<Set<String>>(emptySet())
     val lockedAppsFlow = _lockedAppsFlow.asStateFlow()
+    private val _serviceConnected = MutableStateFlow(false)
+    val serviceConnected = _serviceConnected.asStateFlow()
+
+    fun reportServiceConnected(connected: Boolean) {
+        _serviceConnected.value = connected
+        if (!connected) clearTemporaryUnlocks()
+    }
 
     private var isInitialized = false
     private var autoLockTimeoutSeconds = 0
@@ -56,8 +63,8 @@ object AppLockManager {
     @Synchronized
     fun init(context: Context) {
         if (isInitialized) return
-        isInitialized = true
         val db = AppDatabase.getDatabase(context)
+        isInitialized = true
         CoroutineScope(Dispatchers.IO).launch {
             db.lockedAppDao().getAllApps().collect { apps ->
                 val locked = apps.filter { it.isLocked }.map { it.packageName }.toSet()
