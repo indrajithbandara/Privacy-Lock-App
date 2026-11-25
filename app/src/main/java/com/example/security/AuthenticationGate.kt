@@ -9,7 +9,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.util.UUID
 
-data class AuthenticationResult(val accepted: Boolean, val retryAfterSeconds: Long = 0)
+data class AuthenticationResult(val accepted: Boolean, val retryAfterSeconds: Long = 0, val attempted: Boolean = false)
 
 object AttemptDelayPolicy {
     fun delayMillis(attempt: Int, threshold: Int): Long {
@@ -64,7 +64,7 @@ object AuthenticationGate {
                 return@withContext AuthenticationResult(prefs.edit().clear().commit())
             }
             val remaining = (now + delay - SystemClock.elapsedRealtime()).coerceAtLeast(0)
-            AuthenticationResult(false, (remaining + 999) / 1000)
+            AuthenticationResult(false, (remaining + 999) / 1000, attempted = true)
         }
     }
 }
