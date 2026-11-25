@@ -10,10 +10,13 @@ import androidx.core.content.ContextCompat
 import com.example.LockActivity
 import com.example.data.AppDatabase
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.collectLatest
+import android.os.PowerManager
 
 class AppAccessibilityService : AccessibilityService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var pending: Job? = null
+    private var sessionObserver: Job? = null
     private var registered = false
     private var lastActivePackage: String? = null
 
@@ -34,6 +37,16 @@ class AppAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         clearState()
+        sessionObserver?.cancel()
+        sessionObserver = scope.launch {
+            AppLockManager.sessionRevision.collectLatest {
+                val target = lastActivePackage ?: return@collectLatest
+                val remaining = AppLockManager.remainingSessionMillis(target) ?: return@collectLatest
+                delay(remaining)
+                val interactive = (getSystemService(POWER_SERVICE) as PowerManager).isInteractive
+                if (interactive && lastActivePackage == target && AppLockManager.serviceConnected.value) evaluateForeground(target)
+            }
+        }
         scope.launch {
             try {
                 withContext(Dispatchers.IO) { AppLockManager.init(applicationContext) }
@@ -56,6 +69,10 @@ class AppAccessibilityService : AccessibilityService() {
         val name = event.packageName?.toString() ?: return
         if (name == packageName && event.className?.toString() == LockActivity::class.java.name) return
 
+        evaluateForeground(name)
+    }
+
+    private fun evaluateForeground(name: String) {
         pending?.cancel()
         val previous = lastActivePackage
         lastActivePackage = name

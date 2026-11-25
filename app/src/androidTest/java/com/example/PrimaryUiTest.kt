@@ -25,5 +25,7 @@ class PrimaryUiTest {
         compose.onNodeWithText(activity.getString(R.string.security_events)).assertIsDisplayed()
         compose.onNodeWithText(activity.getString(R.string.nav_apps)).performClick()
         compose.onNodeWithText(appsTitle).assertIsDisplayed()
+        compose.onNodeWithText(activity.getString(R.string.nav_profiles)).performClick()
+        compose.onNodeWithText(activity.getString(R.string.profiles_explanation)).assertIsDisplayed()
     }
 }

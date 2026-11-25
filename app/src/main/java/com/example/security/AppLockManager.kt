@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 object AppLockManager {
@@ -25,6 +26,8 @@ object AppLockManager {
     val lockedAppsFlow = _lockedAppsFlow.asStateFlow()
     private val _serviceConnected = MutableStateFlow(false)
     val serviceConnected = _serviceConnected.asStateFlow()
+    private val _sessionRevision = MutableStateFlow(0L)
+    val sessionRevision = _sessionRevision.asStateFlow()
 
     fun reportServiceConnected(connected: Boolean) {
         _serviceConnected.value = connected
@@ -42,6 +45,7 @@ object AppLockManager {
         if (previous != null && previous != packageName && getAutoLockTimeoutSeconds() == 0) {
             lockPackage(previous)
         }
+        if (previous != packageName) _sessionRevision.update { it + 1 }
     }
 
     fun isForegroundTarget(packageName: String): Boolean = foregroundTarget == packageName
@@ -124,6 +128,15 @@ object AppLockManager {
             temporarilyUnlockedPackages.add(packageName)
             unlockedTimestamps[packageName] = android.os.SystemClock.elapsedRealtime()
         }
+        _sessionRevision.update { it + 1 }
+    }
+
+    /** Remaining time for an existing timed session, independent of wall-clock changes. */
+    fun remainingSessionMillis(packageName: String): Long? = synchronized(temporarilyUnlockedPackages) {
+        val timeout = getAutoLockTimeoutSeconds()
+        if (timeout <= 0 || packageName !in temporarilyUnlockedPackages) return@synchronized null
+        val started = unlockedTimestamps[packageName] ?: return@synchronized null
+        (timeout * 1000L - (android.os.SystemClock.elapsedRealtime() - started)).coerceAtLeast(0L)
     }
 
     fun lockPackage(packageName: String) {
@@ -131,6 +144,7 @@ object AppLockManager {
             temporarilyUnlockedPackages.remove(packageName)
             unlockedTimestamps.remove(packageName)
         }
+        _sessionRevision.update { it + 1 }
     }
 
     fun clearTemporaryUnlocks() {
@@ -138,5 +152,6 @@ object AppLockManager {
             temporarilyUnlockedPackages.clear()
             unlockedTimestamps.clear()
         }
+        _sessionRevision.update { it + 1 }
     }
 }
