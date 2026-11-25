@@ -302,7 +302,7 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
                         val value = kv[1]
                         config = when (key) {
                             "themeMode" -> {
-                                require(value in setOf("SYSTEM", "LIGHT", "DARK"))
+                                require(value in setOf("SYSTEM", "LIGHT", "DARK", "DYNAMIC"))
                                 config.copy(themeMode = value)
                             }
                             "vibrateOnKeyPress" -> {
@@ -327,7 +327,7 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
      */
     fun setThemeMode(mode: String) {
         viewModelScope.launch {
-            require(mode in setOf("SYSTEM", "LIGHT", "DARK"))
+            require(mode in setOf("SYSTEM", "LIGHT", "DARK", "DYNAMIC"))
             repository.updateConfig { it.copy(themeMode = mode) }
         }
     }

@@ -78,6 +78,7 @@ fun DashboardScreen(viewModel: PrivacyViewModel, modifier: Modifier = Modifier, 
                     Text(if (ready) stringResource(R.string.protection_configured) else stringResource(R.string.protection_attention), style = MaterialTheme.typography.titleLarge)
                     Text(stringResource(R.string.selected_count, configuredCount), style = MaterialTheme.typography.bodyLarge)
                     Text(stringResource(R.string.platform_limitation), style = MaterialTheme.typography.bodySmall)
+                    if (!permission || !connected) Text(stringResource(R.string.accessibility_disclosure), style = MaterialTheme.typography.bodySmall)
                     if (!enrolled) Button(onClick = { viewModel.currentScreen = "settings" }) { Text(stringResource(R.string.setup_pin)) }
                     if (!permission || !connected) OutlinedButton(onClick = { SecurityUtils.requestAccessibilityPermission(context) }) { Text(stringResource(R.string.accessibility_settings)) }
                 }

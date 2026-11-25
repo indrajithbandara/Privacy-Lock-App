@@ -111,7 +111,7 @@ class LockActivity : FragmentActivity() {
                 else -> androidx.compose.foundation.isSystemInDarkTheme()
             }
 
-            MyApplicationTheme(darkTheme = darkTheme) {
+            MyApplicationTheme(darkTheme = darkTheme, dynamicColor = config?.themeMode == "DYNAMIC") {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background

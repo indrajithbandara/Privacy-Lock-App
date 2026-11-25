@@ -33,7 +33,7 @@ fun IntruderSelfieScreen(
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(event.appName ?: stringResource(R.string.app_name), style = MaterialTheme.typography.titleMedium)
-                            Text(event.description, style = MaterialTheme.typography.bodyMedium)
+                            Text(if (event.type == "AUTH_FAILURE") stringResource(R.string.auth_event_failure) else stringResource(R.string.auth_event_lockout), style = MaterialTheme.typography.bodyMedium)
                             Text(DateFormat.getDateTimeInstance().format(Date(event.timestamp)),
                                 style = MaterialTheme.typography.bodySmall)
                         }

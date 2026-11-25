@@ -76,7 +76,7 @@ class MainActivity : ComponentActivity() {
                 val shield by vm.isScreenshotProtectionEnabled.collectAsStateWithLifecycle()
                 LaunchedEffect(shield) { toggleScreenshotShield(shield) }
                 val dark = when (config?.themeMode) { "LIGHT" -> false; "DARK" -> true; else -> isSystemInDarkTheme() }
-                MyApplicationTheme(darkTheme = dark) {
+                MyApplicationTheme(darkTheme = dark, dynamicColor = config?.themeMode == "DYNAMIC") {
                     PrivacyLockApp(vm, ::toggleScreenshotShield)
                 }
             }

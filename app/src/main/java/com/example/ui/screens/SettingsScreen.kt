@@ -71,7 +71,7 @@ fun SettingsScreen(
     ) {
         item {
             Text(
-                text = "Privacy Preferences",
+                text = stringResource(R.string.preferences),
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
@@ -81,7 +81,7 @@ fun SettingsScreen(
         // Credentials Configuration
         item {
             Text(
-                text = "Security Credentials",
+                text = stringResource(R.string.security_credentials),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(start = 4.dp)
@@ -112,9 +112,9 @@ fun SettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Primary Vault PIN", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                            Text(text = stringResource(R.string.primary_pin), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
                             Text(
-                                text = if (config?.hashedPin?.isNotEmpty() == true) "6-digit PIN configured" else "No PIN configured. Setup required.",
+                                text = if (config?.hashedPin?.isNotEmpty() == true) stringResource(R.string.pin_configured) else stringResource(R.string.pin_not_configured),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (config?.hashedPin?.isNotEmpty() == true) SoftGreenAccent else MutedRedAccent
                             )
@@ -130,7 +130,7 @@ fun SettingsScreen(
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
                         ) {
-                            Text("Setup")
+                            Text(stringResource(R.string.setup))
                         }
                     }
 
@@ -152,8 +152,8 @@ fun SettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Biometric Authentication", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text(text = "Strong biometric authentication; PIN required to change enrollment", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
+                            Text(text = stringResource(R.string.biometric_auth), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                            Text(text = stringResource(R.string.biometric_setting_desc), style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
                         }
                         val biometricEnabled = config?.biometricsEnabled == true
                         Switch(
@@ -162,7 +162,7 @@ fun SettingsScreen(
                             onCheckedChange = { enabled ->
                                 requestSecurityChange {
                                     viewModel.setBiometricsEnabled(enabled) { success ->
-                                        if (!success) Toast.makeText(context, "Strong biometrics unavailable. Use your PIN.", Toast.LENGTH_LONG).show()
+                                        if (!success) Toast.makeText(context, context.getString(R.string.biometric_unavailable), Toast.LENGTH_LONG).show()
                                     }
                                 }
                             },
@@ -179,7 +179,7 @@ fun SettingsScreen(
         // Lock Customizations & Options
         item {
             Text(
-                text = "Lock Configuration",
+                text = stringResource(R.string.lock_configuration),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(start = 4.dp, top = 8.dp)
@@ -197,13 +197,13 @@ fun SettingsScreen(
                     // Auto-Lock Timeout Selector
                     val currentTimeout = config?.autoLockTimeoutSeconds ?: 0
                     val timeoutLabel = when (currentTimeout) {
-                        0 -> "Immediately"
-                        15 -> "15 seconds"
-                        30 -> "30 seconds"
-                        60 -> "1 minute"
-                        300 -> "5 minutes"
-                        600 -> "10 minutes"
-                        else -> "Screen Off only"
+                        0 -> stringResource(R.string.immediately)
+                        15 -> stringResource(R.string.seconds_count, 15)
+                        30 -> stringResource(R.string.seconds_count, 30)
+                        60 -> stringResource(R.string.minute_one)
+                        300 -> stringResource(R.string.minutes_count, 5)
+                        600 -> stringResource(R.string.minutes_count, 10)
+                        else -> stringResource(R.string.screen_off_only)
                     }
                     Row(
                         modifier = Modifier
@@ -222,8 +222,8 @@ fun SettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Auto Lock Timeout", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text(text = "Current: $timeoutLabel", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
+                            Text(text = stringResource(R.string.lock_timeout), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                            Text(text = stringResource(R.string.current_value, timeoutLabel), style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
                         }
                         Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextWarmGray)
                     }
@@ -246,8 +246,8 @@ fun SettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Lock New Apps", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text(text = "Auto-lock future app installations", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
+                            Text(text = stringResource(R.string.lock_new_apps), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                            Text(text = stringResource(R.string.lock_new_desc), style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
                         }
                         val lockNewActive = config?.lockNewlyInstalledApps == true
                         Switch(
@@ -280,8 +280,8 @@ fun SettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Haptic Vibration", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text(text = "Vibrate on secure keypad inputs", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
+                            Text(text = stringResource(R.string.haptic), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                            Text(text = stringResource(R.string.haptic_desc), style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
                         }
                         val vibrateActive = config?.vibrateOnKeyPress == true
                         Switch(
@@ -302,7 +302,7 @@ fun SettingsScreen(
         // Advanced Guard Protections
         item {
             Text(
-                text = "Advanced Shields",
+                text = stringResource(R.string.advanced_controls),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(start = 4.dp, top = 8.dp)
@@ -334,8 +334,8 @@ fun SettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Screenshot Shield", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text(text = "Blocks system screen captures", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
+                            Text(text = stringResource(R.string.screenshot_shield), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                            Text(text = stringResource(R.string.screenshot_desc), style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
                         }
                         Switch(
                             checked = screenshotEnabled,
@@ -369,8 +369,8 @@ fun SettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Randomized Keypad", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text(text = "Shuffles PIN keyboard layout", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
+                            Text(text = stringResource(R.string.randomized_keypad), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                            Text(text = stringResource(R.string.randomized_desc), style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
                         }
                         Switch(
                             checked = randomizeEnabled,
@@ -405,8 +405,8 @@ fun SettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Intruder Attempt Limit", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text(text = "Current: $failedLimit failed attempts", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
+                            Text(text = stringResource(R.string.failed_limit), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                            Text(text = stringResource(R.string.failed_limit_count, failedLimit), style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
                         }
                         Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextWarmGray)
                     }
@@ -417,7 +417,7 @@ fun SettingsScreen(
         // Appearance Configuration
         item {
             Text(
-                text = "Aesthetic Styles",
+                text = stringResource(R.string.appearance),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(start = 4.dp, top = 8.dp)
@@ -434,40 +434,14 @@ fun SettingsScreen(
                 ) {
                     val currentTheme = config?.themeMode ?: "SYSTEM"
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Visual Interface Vibe", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text(text = "Light & dark theme switching", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
-                        }
-
-                        // Theme Mode buttons
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            listOf("SYSTEM", "LIGHT", "DARK").forEach { mode ->
-                                val selected = currentTheme == mode
-                                Button(
-                                    onClick = { viewModel.setThemeMode(mode) },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                        contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                                    ),
-                                    shape = RoundedCornerShape(10.dp),
-                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                                    modifier = Modifier.height(34.dp)
-                                ) {
-                                    Text(
-                                        text = mode,
-                                        style = MaterialTheme.typography.bodySmall.copy(
-                                            fontWeight = FontWeight.SemiBold,
-                                            fontSize = 11.sp
-                                        )
-                                    )
-                                }
+                    Text(stringResource(R.string.theme_mode), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.theme_desc), style = MaterialTheme.typography.bodySmall)
+                    listOf("SYSTEM" to R.string.theme_system, "LIGHT" to R.string.theme_light,
+                        "DARK" to R.string.theme_dark, "DYNAMIC" to R.string.theme_dynamic).forEach { (mode, label) ->
+                        if (mode != "DYNAMIC" || android.os.Build.VERSION.SDK_INT >= 31) {
+                            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(selected = currentTheme == mode, onClick = { viewModel.setThemeMode(mode) })
+                                Text(stringResource(label), style = MaterialTheme.typography.bodyLarge)
                             }
                         }
                     }
@@ -478,12 +452,12 @@ fun SettingsScreen(
         item {
             Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Security event retention", style = MaterialTheme.typography.titleMedium)
-                    Text("Keep a limited number of recent events, or preserve your full history. The event screen displays the latest 100 records.")
+                    Text(stringResource(R.string.event_retention), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.retention_desc))
                     listOf(0, 100, 500, 1000).forEach { limit ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(selected = viewModel.eventRetentionLimit == limit, onClick = { pendingRetention = limit })
-                            Text(if (limit == 0) "Keep all" else "Keep latest $limit")
+                            Text(if (limit == 0) stringResource(R.string.keep_all) else stringResource(R.string.keep_latest, limit))
                         }
                     }
                 }
@@ -493,7 +467,7 @@ fun SettingsScreen(
         // Local Storage Backup & Restore Settings
         item {
             Text(
-                text = "Backup & Recovery",
+                text = stringResource(R.string.backup_recovery),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(start = 4.dp, top = 8.dp)
@@ -523,8 +497,8 @@ fun SettingsScreen(
                         }
                         Spacer(modifier = Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Appearance Preference Backup", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
-                            Text(text = "Export or restore theme and keypad vibration preferences only", style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
+                            Text(text = stringResource(R.string.appearance_backup), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold))
+                            Text(text = stringResource(R.string.appearance_backup_desc), style = MaterialTheme.typography.bodySmall, color = TextWarmGray)
                         }
                         Button(
                             onClick = {
@@ -537,9 +511,21 @@ fun SettingsScreen(
                             shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant, contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
                         ) {
-                            Text("Manage")
+                            Text(stringResource(R.string.manage))
                         }
                     }
+                }
+            }
+        }
+        item {
+            Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.about), style = MaterialTheme.typography.titleLarge)
+                    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.version_text, com.example.BuildConfig.VERSION_NAME))
+                    Text(stringResource(R.string.privacy_summary), style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.accessibility_disclosure), style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.platform_limitation), style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
@@ -554,16 +540,16 @@ fun SettingsScreen(
         })
 
     pendingRetention?.let { limit ->
-        AlertDialog(onDismissRequest = { pendingRetention = null }, title = { Text("Change event retention?") },
-            text = { Text(if (limit == 0) "Future events will be kept until you clear them." else "Older records beyond the selected limit will be permanently removed.") },
+        AlertDialog(onDismissRequest = { pendingRetention = null }, title = { Text(stringResource(R.string.retention_change)) },
+            text = { Text(if (limit == 0) stringResource(R.string.retention_all_confirm) else stringResource(R.string.retention_limit_confirm)) },
             confirmButton = { TextButton(onClick = {
                 requestSecurityChange {
                     viewModel.setEventRetention(limit) { success ->
-                        if (!success) Toast.makeText(context, "Unable to update retention", Toast.LENGTH_SHORT).show()
+                        if (!success) Toast.makeText(context, context.getString(R.string.retention_error), Toast.LENGTH_SHORT).show()
                     }
                 }
                 pendingRetention = null
-            }) { Text("Apply") } }, dismissButton = { TextButton(onClick = { pendingRetention = null }) { Text("Cancel") } })
+            }) { Text(stringResource(R.string.common_apply)) } }, dismissButton = { TextButton(onClick = { pendingRetention = null }) { Text(stringResource(R.string.common_cancel)) } })
     }
 
     // PIN Setup Dialog
@@ -652,7 +638,7 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(16.dp)
                         ) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.common_cancel))
                         }
 
                         Button(
@@ -679,7 +665,7 @@ fun SettingsScreen(
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
-                            Text("Confirm")
+                            Text(stringResource(R.string.common_confirm))
                         }
                     }
                 }
@@ -691,17 +677,17 @@ fun SettingsScreen(
     if (showTimeoutSelector) {
         AlertDialog(
             onDismissRequest = { showTimeoutSelector = false },
-            title = { Text("Select Auto Lock Timeout", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.select_timeout), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val timeouts = listOf(
-                        0 to "Immediately",
-                        15 to "15 seconds",
-                        30 to "30 seconds",
-                        60 to "1 minute",
-                        300 to "5 minutes",
-                        600 to "10 minutes",
-                        -1 to "Screen Off only"
+                        0 to stringResource(R.string.immediately),
+                        15 to stringResource(R.string.seconds_count, 15),
+                        30 to stringResource(R.string.seconds_count, 30),
+                        60 to stringResource(R.string.minute_one),
+                        300 to stringResource(R.string.minutes_count, 5),
+                        600 to stringResource(R.string.minutes_count, 10),
+                        -1 to stringResource(R.string.screen_off_only)
                     )
                     timeouts.forEach { (sec, label) ->
                         Row(
@@ -729,7 +715,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showTimeoutSelector = false }) {
-                    Text("Dismiss")
+                    Text(stringResource(R.string.common_dismiss))
                 }
             }
         )
@@ -739,7 +725,7 @@ fun SettingsScreen(
     if (showLimitSelector) {
         AlertDialog(
             onDismissRequest = { showLimitSelector = false },
-            title = { Text("Select Failed Attempt Limit", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.select_failed_limit), fontWeight = FontWeight.Bold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     val limits = listOf(3, 5, 10)
@@ -762,14 +748,14 @@ fun SettingsScreen(
                                 }
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("$limit attempts", style = MaterialTheme.typography.bodyLarge)
+                            Text(stringResource(R.string.attempt_count, limit), style = MaterialTheme.typography.bodyLarge)
                         }
                     }
                 }
             },
             confirmButton = {
                 TextButton(onClick = { showLimitSelector = false }) {
-                    Text("Dismiss")
+                    Text(stringResource(R.string.common_dismiss))
                 }
             }
         )
@@ -779,14 +765,14 @@ fun SettingsScreen(
     if (showBackupRestoreDialog) {
         AlertDialog(
             onDismissRequest = { showBackupRestoreDialog = false },
-            title = { Text("Manage Appearance Preferences", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.manage_appearance), fontWeight = FontWeight.Bold) },
             text = {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        "Exported appearance preferences:",
+                        stringResource(R.string.backup_exported),
                         style = MaterialTheme.typography.bodySmall,
                         color = TextWarmGray
                     )
@@ -795,7 +781,7 @@ fun SettingsScreen(
                         value = showBackupCode,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Backup Configuration Key") },
+                        label = { Text(stringResource(R.string.backup_key)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -803,7 +789,7 @@ fun SettingsScreen(
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
 
                     Text(
-                        "To restore configurations, paste your backup key below and tap Restore:",
+                        stringResource(R.string.backup_restore_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = TextWarmGray
                     )
@@ -811,7 +797,7 @@ fun SettingsScreen(
                     OutlinedTextField(
                         value = backupStringInput,
                         onValueChange = { backupStringInput = it },
-                        label = { Text("Paste Backup Key") },
+                        label = { Text(stringResource(R.string.paste_backup)) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
@@ -822,21 +808,21 @@ fun SettingsScreen(
                     onClick = {
                         viewModel.restoreBackup(backupStringInput) { success ->
                             if (success) {
-                                Toast.makeText(context, "Configurations Restored Successfully!", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, context.getString(R.string.restore_success), Toast.LENGTH_SHORT).show()
                                 showBackupRestoreDialog = false
                             } else {
-                                Toast.makeText(context, "Invalid Backup Key Format!", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, context.getString(R.string.restore_invalid), Toast.LENGTH_LONG).show()
                             }
                         }
                     },
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Restore")
+                    Text(stringResource(R.string.restore))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showBackupRestoreDialog = false }) {
-                    Text("Close")
+                    Text(stringResource(R.string.common_close))
                 }
             }
         )

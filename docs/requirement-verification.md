@@ -1,6 +1,6 @@
 # Engineering requirement verification
 
-This matrix records implementation separately from execution evidence. The last fully green historical baseline was commit `56a2582`; commit `9462adbe` passed dependency, release, CodeQL and emulator tests but its debug unit-test compilation failed due to a renamed icon component in a screenshot test. Fix `6bc2080` updates the test; a new run is required.
+This matrix records implementation separately from execution evidence. The last fully green historical baseline was commit `56a2582`; commit `9462adbe` passed dependency, release, CodeQL and emulator tests but its debug unit-test compilation failed due to a renamed icon component in a screenshot test. Fix `6bc2080` updated the test; the subsequent CI reached lint and reported missing translations. The product name is intentionally non-translatable and the accessibility disclosure has been translated. A fresh full run is required.
 
 | Requirement | Implementation | Evidence / remaining work |
 | --- | --- | --- |
@@ -14,7 +14,7 @@ This matrix records implementation separately from execution evidence. The last 
 | Security events | Real PIN failure/lockout, local retention and explicit deletion | Device retention test; encryption backed by SQLCipher |
 | Installed app discovery | Scoped launcher visibility, search and filters, metadata-only updates | Repository tests; install/remove edge cases and individual profiles remain incomplete |
 | UI and accessibility | Material 3 navigation, honest dashboard, secure dialog semantics | MainActivity navigation and unenrolled keypad instrumented tests added; execution pending. Not a complete accessibility audit |
-| Localization | English, Sinhala and Tamil initial dashboard, navigation, events and authentication resources | Native linguistic review, full settings and layout validation outstanding |
+| Localization | English, Sinhala and Tamil dashboard, navigation, events, authentication and settings resources; localized accessibility disclosure | Linguistic review and layout validation outstanding; historical free-text event descriptions remain as originally recorded |
 | Release | Optimized unsigned APK/AAB; restricted signed validation workflow | Unsigned run 9 succeeded; production signing and certificate match not executed |
 | CodeQL and dependencies | Advanced CodeQL and Dependency Review workflows | Both passed at commit `9462adbe`; latest rerun required; no independent audit claim |
 | Branding and repository rename | Proposed name only | Material potential conflicting mobile security app; see [brand review](brand-availability.md) |
