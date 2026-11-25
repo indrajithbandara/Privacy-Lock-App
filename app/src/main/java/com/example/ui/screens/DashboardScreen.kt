@@ -39,6 +39,7 @@ fun DashboardScreen(viewModel: PrivacyViewModel, modifier: Modifier = Modifier, 
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     var permission by remember { mutableStateOf(SecurityUtils.isAccessibilityServiceEnabled(context)) }
+    var showDisclosure by remember { mutableStateOf(false) }
     var eligible by remember { mutableStateOf<Set<String>>(emptySet()) }
     LaunchedEffect(apps) {
         eligible = withContext(Dispatchers.IO) { apps.filter { AppLockManager.canProtect(context, it.packageName) }.map { it.packageName }.toSet() }
@@ -81,7 +82,7 @@ fun DashboardScreen(viewModel: PrivacyViewModel, modifier: Modifier = Modifier, 
                     Text(stringResource(R.string.platform_limitation), style = MaterialTheme.typography.bodySmall)
                     if (!permission || !connected) Text(stringResource(R.string.accessibility_disclosure), style = MaterialTheme.typography.bodySmall)
                     if (!enrolled) Button(onClick = { viewModel.currentScreen = "settings" }) { Text(stringResource(R.string.setup_pin)) }
-                    if (!permission || !connected) OutlinedButton(onClick = { SecurityUtils.requestAccessibilityPermission(context) }) { Text(stringResource(R.string.accessibility_settings)) }
+                    if (!permission || !connected) OutlinedButton(onClick = { showDisclosure = true }) { Text(stringResource(R.string.accessibility_settings)) }
                 }
             }
         }
@@ -115,4 +116,11 @@ fun DashboardScreen(viewModel: PrivacyViewModel, modifier: Modifier = Modifier, 
             }
         }
     }
+    if (showDisclosure) AlertDialog(
+        onDismissRequest = { showDisclosure = false },
+        title = { Text(stringResource(R.string.accessibility_settings)) },
+        text = { Text(stringResource(R.string.accessibility_disclosure) + "\n\n" + stringResource(R.string.platform_limitation)) },
+        confirmButton = { TextButton(onClick = { showDisclosure = false; SecurityUtils.requestAccessibilityPermission(context) }) { Text(stringResource(R.string.accessibility_consent_open)) } },
+        dismissButton = { TextButton(onClick = { showDisclosure = false }) { Text(stringResource(R.string.common_cancel)) } }
+    )
 }

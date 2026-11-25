@@ -31,7 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -153,9 +153,7 @@ class LockActivity : FragmentActivity() {
 
     private fun unlockApp() {
         if (isFinishing || isDestroyed) return
-        if (AppLockManager.isForegroundTarget(targetPackageName)) {
-            AppLockManager.temporarilyUnlockPackage(targetPackageName)
-        }
+        AppLockManager.grantForegroundSession(targetPackageName)
         finish()
     }
 
@@ -327,7 +325,7 @@ fun LockScreenContent(
             // PIN Dots Indicators; accessibility exposes the length, never the value.
             val digitStatus = stringResource(R.string.auth_digits_entered, pinBuffer.length)
             Row(
-                modifier = Modifier.semantics { stateDescription = digitStatus },
+                modifier = Modifier.semantics { contentDescription = digitStatus },
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {

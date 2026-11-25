@@ -28,7 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.contentDescription
 import com.example.R
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -366,7 +366,7 @@ fun SecureAuthDialog(
                     // PIN Dots indicators; accessibility exposes only the number of entered digits.
                     val digitStatus = stringResource(R.string.auth_digits_entered, pinBuffer.length)
                     Row(
-                        modifier = Modifier.semantics { stateDescription = digitStatus },
+                        modifier = Modifier.semantics { contentDescription = digitStatus },
                         horizontalArrangement = Arrangement.spacedBy(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {

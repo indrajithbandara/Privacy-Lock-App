@@ -29,7 +29,7 @@ object AppLockManager {
     private val _sessionRevision = MutableStateFlow(0L)
     val sessionRevision = _sessionRevision.asStateFlow()
 
-    fun reportServiceConnected(connected: Boolean) {
+    fun reportServiceConnected(connected: Boolean): Unit = synchronized(foregroundStateLock) {
         _serviceConnected.value = connected
         if (!connected) clearTemporaryUnlocks()
     }
@@ -39,8 +39,9 @@ object AppLockManager {
     @Volatile private var immediateProfilePackages: Set<String> = emptySet()
 
     @Volatile private var foregroundTarget: String? = null
+    private val foregroundStateLock = Any()
 
-    fun setForegroundTarget(packageName: String?) {
+    fun setForegroundTarget(packageName: String?): Unit = synchronized(foregroundStateLock) {
         val previous = foregroundTarget
         foregroundTarget = packageName
         if (previous != null && previous != packageName && getAutoLockTimeoutSeconds(previous) == 0) {
@@ -50,6 +51,13 @@ object AppLockManager {
     }
 
     fun isForegroundTarget(packageName: String): Boolean = foregroundTarget == packageName
+
+    /** A completed authentication is valid only for the still-current foreground request. */
+    fun grantForegroundSession(packageName: String): Boolean = synchronized(foregroundStateLock) {
+        if (foregroundTarget != packageName || !_serviceConnected.value) return@synchronized false
+        temporarilyUnlockPackage(packageName)
+        true
+    }
 
     /** Keep owner controls and system functions outside the locker's scope. */
     fun canProtect(context: Context, packageName: String): Boolean {
@@ -134,7 +142,7 @@ object AppLockManager {
         }
     }
 
-    fun temporarilyUnlockPackage(packageName: String) {
+    internal fun temporarilyUnlockPackage(packageName: String) {
         synchronized(temporarilyUnlockedPackages) {
             temporarilyUnlockedPackages.add(packageName)
             unlockedTimestamps[packageName] = android.os.SystemClock.elapsedRealtime()

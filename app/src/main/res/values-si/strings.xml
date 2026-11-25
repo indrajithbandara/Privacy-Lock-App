@@ -170,4 +170,5 @@
     <string name="event_profile_deactivated">පැතිකඩ අක්‍රීය කළා: %1$s</string>
     <string name="event_profile_deleted">පැතිකඩ මකා දැමුවා: %1$s</string>
     <string name="profile_switch">%1$s පැතිකඩ සක්‍රීය කරන්න</string>
+    <string name="accessibility_consent_open">තේරුම් ගත්තා — Android සැකසුම් විවෘත කරන්න</string>
 </resources>

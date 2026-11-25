@@ -170,4 +170,5 @@
     <string name="event_profile_deactivated">சுயவிவரம் முடக்கப்பட்டது: %1$s</string>
     <string name="event_profile_deleted">சுயவிவரம் நீக்கப்பட்டது: %1$s</string>
     <string name="profile_switch">%1$s சுயவிவரத்தை செயல்படுத்து</string>
+    <string name="accessibility_consent_open">புரிந்துகொண்டேன் — Android அமைப்புகளைத் திற</string>
 </resources>

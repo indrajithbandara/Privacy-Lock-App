@@ -4,8 +4,6 @@ import android.app.UiAutomation
 import android.graphics.Rect
 import android.os.Build
 import android.os.SystemClock
-import android.view.MotionEvent
-import android.view.InputDevice
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -62,13 +60,8 @@ class ForegroundProtectionTest {
         if (!node.isVisibleToUser) return false
         val bounds = Rect().also(node::getBoundsInScreen)
         if (bounds.isEmpty) return false
-        val now = SystemClock.uptimeMillis()
-        val down = MotionEvent.obtain(now, now, MotionEvent.ACTION_DOWN, bounds.exactCenterX(), bounds.exactCenterY(), 0)
-        val up = MotionEvent.obtain(now, now + 50, MotionEvent.ACTION_UP, bounds.exactCenterX(), bounds.exactCenterY(), 0)
-        down.source = InputDevice.SOURCE_TOUCHSCREEN
-        up.source = InputDevice.SOURCE_TOUCHSCREEN
-        return try { automation.injectInputEvent(down, true) && automation.injectInputEvent(up, true) }
-        finally { down.recycle(); up.recycle() }
+        shell("input tap ${bounds.centerX()} ${bounds.centerY()}")
+        return true
     }
     private fun clickText(text: String): Boolean = nodes().firstOrNull { it.isVisibleToUser && it.text?.toString() == text }?.let(::clickNode) == true
     private fun clickSwitch(): Boolean = nodes().firstOrNull { it.className?.toString() == "android.widget.Switch" && it.isEnabled }?.let(::clickNode) == true
@@ -79,7 +72,11 @@ class ForegroundProtectionTest {
     /** Exercise the visible, user-controlled Android Settings consent flow; no secure-setting writes. */
     private fun changeServiceThroughSettings(enable: Boolean) {
         if (SecurityUtils.isAccessibilityServiceEnabled(context) == enable) return
-        launchSettings()
+        if (enable) {
+            shell("am start -W -n ${context.packageName}/com.example.MainActivity")
+            eventually("app accessibility disclosure", 30_000) { clickText(context.getString(R.string.accessibility_settings)) }
+            eventually("affirmative app consent") { clickText(context.getString(R.string.accessibility_consent_open)) }
+        } else launchSettings()
         val name = context.getString(R.string.app_name)
         eventually("accessibility settings service list") {
             if (hasText(name)) return@eventually true
@@ -111,9 +108,10 @@ class ForegroundProtectionTest {
             }
             // Let Compose consume the touch and recompose before the next digit.
             SystemClock.sleep(350)
-            if (Build.VERSION.SDK_INT >= 30 && index < pin.lastIndex) {
+            if (index < pin.lastIndex) {
                 val expected = context.getString(R.string.auth_digits_entered, index + 1)
-                eventually("PIN length indicator") { nodes().any { it.stateDescription?.toString() == expected } }
+                eventually("PIN length indicator") { nodes().any { it.contentDescription?.toString() == expected } }
+                android.util.Log.i("ForegroundProtectionTest", "Verified keypad length ${index + 1}")
             }
         }
     }

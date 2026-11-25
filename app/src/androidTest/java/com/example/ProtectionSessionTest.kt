@@ -9,6 +9,26 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ProtectionSessionTest {
+    @Test fun staleForegroundAuthenticationCannotGrantSession() {
+        val connected = AppLockManager.serviceConnected.value
+        AppLockManager.clearTemporaryUnlocks()
+        AppLockManager.reportServiceConnected(true)
+        try {
+            AppLockManager.setForegroundTarget("fixture.first")
+            AppLockManager.setForegroundTarget("fixture.second")
+            assertFalse(AppLockManager.grantForegroundSession("fixture.first"))
+            assertFalse(AppLockManager.isPackageTemporarilyUnlocked("fixture.first"))
+            assertTrue(AppLockManager.grantForegroundSession("fixture.second"))
+            AppLockManager.reportServiceConnected(false)
+            assertFalse(AppLockManager.isPackageTemporarilyUnlocked("fixture.second"))
+            assertFalse(AppLockManager.grantForegroundSession("fixture.second"))
+        } finally {
+            AppLockManager.clearTemporaryUnlocks()
+            AppLockManager.setForegroundTarget(null)
+            AppLockManager.reportServiceConnected(connected)
+        }
+    }
+
     @Test fun switchingTargetRevokesImmediateSession() {
         AppLockManager.clearTemporaryUnlocks()
         AppLockManager.setForegroundTarget("fixture.first")

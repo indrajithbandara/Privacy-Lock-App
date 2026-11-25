@@ -172,4 +172,5 @@
     <string name="event_profile_deactivated">Profile deactivated: %1$s</string>
     <string name="event_profile_deleted">Profile deleted: %1$s</string>
     <string name="profile_switch">Activate profile %1$s</string>
+    <string name="accessibility_consent_open">I understand — open Android settings</string>
 </resources>

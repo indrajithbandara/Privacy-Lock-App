@@ -17,6 +17,8 @@ Search date: 2026-11-25. This is a preliminary public-source review, not legal c
 
 The public search did not verify a complete set of live records or exact class 9/42 results in these interactive databases or the Sri Lankan national register. Search named marks, similar marks, goods/services (particularly downloadable software and related services), ownership and regional use before publication. The existing Apple app is sufficient to flag a material unresolved naming risk without asserting infringement. No alternative name has been selected.
 
+WIPO's [Global Brand Database FAQ](https://www.wipo.int/en/web/global-brand-database/faqs_branddb) prohibits automated querying and recommends national-register searches. No attempt was made to circumvent these restrictions; a qualified manual clearance review is required for the intended markets.
+
 ## Revised intended name
 
 The owner has approved **Untouched: Privacy Lock**, with **Untouched** as the launcher label and **Your apps. Your boundaries.** as the tagline. The descriptive suffix differentiates the use case, but the identical dominant word and related mobile security functions remain a potential confusion issue. The [Sri Lankan NIPO online public search](https://nipo.gov.lk/web/index.php?Itemid=131&catid=8&id=236%3Anipo-online-public-search&lang=en&option=com_content&view=article) is an additional official register; comprehensive live class 9/42 record results remain unverified. No definitive legal clearance is asserted.

@@ -555,7 +555,7 @@ fun SettingsScreen(
 
     // PIN Setup Dialog
     if (showPinSetup) {
-        Dialog(onDismissRequest = { showPinSetup = false }) {
+        Dialog(onDismissRequest = { currentPinInput = ""; pinSetupInput = ""; confirmPinInput = ""; showPinSetup = false }) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -590,6 +590,7 @@ fun SettingsScreen(
                             value = currentPinInput,
                             onValueChange = { if (it.length <= 6 && it.all { ch -> ch in '0'..'9' }) currentPinInput = it },
                             label = { Text(stringResource(R.string.settings_current_pin)) },
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword),
                             visualTransformation = PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -605,7 +606,7 @@ fun SettingsScreen(
                         },
                         placeholder = { Text(stringResource(R.string.settings_enter_pin)) },
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword
                         ),
                         visualTransformation = PasswordVisualTransformation(),
                         modifier = Modifier
@@ -618,8 +619,9 @@ fun SettingsScreen(
                         value = confirmPinInput,
                         onValueChange = { if (it.length <= 6 && it.all { ch -> ch in '0'..'9' }) confirmPinInput = it },
                         label = { Text(stringResource(R.string.settings_confirm_pin)) },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword),
                         visualTransformation = PasswordVisualTransformation(),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth().testTag("pin_confirm_input")
                     )
 
                     if (pinSetupError != null) {
@@ -635,7 +637,7 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         OutlinedButton(
-                            onClick = { showPinSetup = false },
+                            onClick = { currentPinInput = ""; pinSetupInput = ""; confirmPinInput = ""; showPinSetup = false },
                             modifier = Modifier.weight(1f),
                             shape = RoundedCornerShape(16.dp)
                         ) {
