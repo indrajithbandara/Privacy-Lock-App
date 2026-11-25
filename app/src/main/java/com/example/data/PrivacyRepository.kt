@@ -34,6 +34,16 @@ class PrivacyRepository(private val db: AppDatabase) {
         configDao.insertConfig(config)
     }
 
+    suspend fun changePrimaryPin(currentPin: String, newPin: String): Boolean {
+        val stored = getConfigDirect().hashedPin
+        if (stored.isNotEmpty() && !withContext(Dispatchers.Default) { PinCredentials.verify(currentPin, stored) }) {
+            logAuthenticationFailure()
+            return false
+        }
+        val replacement = withContext(Dispatchers.Default) { SecurityUtils.hashPin(newPin) }
+        return configDao.replacePin(stored, replacement) == 1
+    }
+
     suspend fun verifyPrimaryPin(pin: String): Boolean {
         val stored = configDao.getConfigDirect()?.hashedPin ?: return false
         if (!withContext(Dispatchers.Default) { PinCredentials.verify(pin, stored) }) return false
