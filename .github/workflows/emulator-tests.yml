@@ -25,6 +25,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.3.1'
+      - name: Build fixture, application and instrumentation APKs
+        run: gradle :test-fixture:assembleDebug :app:assembleOpensourceDebug :app:assembleOpensourceDebugAndroidTest --no-daemon --stacktrace
       - name: Enable hardware acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -38,16 +40,12 @@ jobs:
           target: google_apis
           disk-size: 4096M
           disable-animations: true
-          script: |
-            adb shell df -h /data
-            gradle :test-fixture:assembleDebug --no-daemon --stacktrace
-            adb install test-fixture/build/outputs/apk/debug/test-fixture-debug.apk
-            gradle :app:connectedOpensourceDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.notClass=com.example.LegacyApkUpgradeTest --no-daemon --stacktrace || { adb logcat -d -s ForegroundProtectionTest:I; exit 1; }
+          script: bash .github/scripts/test-emulator-authentication.sh
       - name: Upload device test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: instrumentation-api-${{ matrix.api-level }}
           path: |
-            app/build/reports/androidTests/
-            app/build/outputs/androidTest-results/
+            authentication-test-results.txt
+            foreground-test-log.txt

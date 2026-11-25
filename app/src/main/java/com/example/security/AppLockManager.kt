@@ -39,6 +39,7 @@ object AppLockManager {
     @Volatile private var immediateProfilePackages: Set<String> = emptySet()
 
     @Volatile private var foregroundTarget: String? = null
+    @Volatile private var visibleLockPrompt: String? = null
     private val foregroundStateLock = Any()
 
     fun setForegroundTarget(packageName: String?): Unit = synchronized(foregroundStateLock) {
@@ -51,6 +52,13 @@ object AppLockManager {
     }
 
     fun isForegroundTarget(packageName: String): Boolean = foregroundTarget == packageName
+
+    /** The lock activity belongs to this app; its internal window events are not app switches. */
+    internal fun reportLockPromptVisible(packageName: String?) {
+        visibleLockPrompt = packageName
+    }
+
+    internal fun hasVisibleLockPrompt(): Boolean = visibleLockPrompt != null
 
     /** A completed authentication is valid only for the still-current foreground request. */
     fun grantForegroundSession(packageName: String): Boolean = synchronized(foregroundStateLock) {

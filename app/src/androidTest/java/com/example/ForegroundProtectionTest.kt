@@ -77,7 +77,12 @@ class ForegroundProtectionTest {
 
     private fun awaitFixtureContent() {
         automation = instrumentation.getUiAutomation(UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES)
-        eventually("fixture access after authentication", 60_000) { hasText("Fixture content visible") }
+        try {
+            eventually("fixture access after authentication", 60_000) { hasText("Fixture content visible") }
+        } catch (failure: AssertionError) {
+            android.util.Log.i("ForegroundProtectionTest", "Restoration diagnostics: session=${AppLockManager.isPackageTemporarilyUnlocked(fixture)}, target=${AppLockManager.isForegroundTarget(fixture)}, fixtureWindow=${nodes().any { it.packageName?.toString() == fixture }}")
+            throw failure
+        }
     }
     private fun clickNode(node: AccessibilityNodeInfo): Boolean {
         var current: AccessibilityNodeInfo? = node
@@ -190,6 +195,7 @@ class ForegroundProtectionTest {
             assertTrue(db.timelineEventDao().getAllEventsDirect().any { it.type == "AUTH_FAILURE" && it.appName == "Protection test fixture" })
             android.util.Log.i("ForegroundProtectionTest", "Rejected incorrect PIN and recorded event")
             SystemClock.sleep(1500)
+            assertTrue("Lock prompt must preserve the actual protected foreground request", AppLockManager.isForegroundTarget(fixture))
             enterPin("246810")
             awaitFixtureContent()
             android.util.Log.i("ForegroundProtectionTest", "Authenticated and observed fixture")

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.0.0-rc.3] - 2026-11-26
+
+### Fixed
+- Keep the protected target during the app's own resumed lock UI window events; authentication still requires a connected service and matching foreground request.
+- Replace recurring UTP APK install-write failures with direct APK installation and the complete AndroidJUnitRunner suite.
+
 ## [2.0.0-rc.2] - 2026-11-26
 
 ### Fixed

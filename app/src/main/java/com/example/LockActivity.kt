@@ -155,6 +155,18 @@ class LockActivity : FragmentActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (targetPackageName.isNotEmpty() && !isFinishing && !isDestroyed) {
+            AppLockManager.reportLockPromptVisible(targetPackageName)
+        }
+    }
+
+    override fun onPause() {
+        AppLockManager.reportLockPromptVisible(null)
+        super.onPause()
+    }
+
     private fun unlockApp() {
         if (isFinishing || isDestroyed) return
         if (AppLockManager.grantForegroundSession(targetPackageName)) {

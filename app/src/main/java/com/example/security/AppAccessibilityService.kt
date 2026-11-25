@@ -67,7 +67,8 @@ class AppAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val name = event.packageName?.toString() ?: return
-        if (name == packageName && event.className?.toString() == LockActivity::class.java.name) return
+        if (name == packageName && (event.className?.toString() == LockActivity::class.java.name ||
+                AppLockManager.hasVisibleLockPrompt())) return
 
         evaluateForeground(name)
     }
