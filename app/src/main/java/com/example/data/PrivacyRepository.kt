@@ -8,6 +8,7 @@ import kotlinx.coroutines.withContext
 import com.example.security.AuthenticationGate
 import com.example.security.AuthenticationResult
 import com.example.security.PinCredentials
+import com.example.security.CredentialEnvelope
 import com.example.security.SecurityUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
@@ -41,7 +42,8 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
         val stored = configuration.hashedPin
         if (stored.isNotEmpty()) {
             val result = AuthenticationGate.authenticate(context, configuration.failedAttemptLimit) {
-                if (!PinCredentials.verify(currentPin, stored)) return@authenticate false
+                val decoded = CredentialEnvelope.unwrap(stored) ?: return@authenticate false
+                if (!PinCredentials.verify(currentPin, decoded)) return@authenticate false
                 val replacement = SecurityUtils.hashPin(newPin)
                 configDao.replacePin(stored, replacement) == 1
             }
@@ -57,8 +59,9 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
         val stored = configuration.hashedPin
         if (stored.isEmpty()) return AuthenticationResult(false)
         val result = AuthenticationGate.authenticate(context, configuration.failedAttemptLimit) {
-            if (!PinCredentials.verify(pin, stored)) return@authenticate false
-            if (PinCredentials.isLegacy(stored)) {
+            val decoded = CredentialEnvelope.unwrap(stored) ?: return@authenticate false
+            if (!PinCredentials.verify(pin, decoded)) return@authenticate false
+            if (!CredentialEnvelope.isWrapped(stored) || PinCredentials.isLegacy(decoded)) {
                 val upgraded = SecurityUtils.hashPin(pin)
                 return@authenticate configDao.replacePin(stored, upgraded) == 1
             }
