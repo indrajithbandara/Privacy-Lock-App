@@ -15,6 +15,8 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.click
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.core.app.ActivityScenario
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.data.AppDatabase
 import com.example.data.PrivacyRepository
@@ -57,6 +59,26 @@ class ForegroundProtectionTest {
     }
 
     private fun hasText(text: String) = nodes().any { it.text?.toString() == text }
+
+    private fun awaitRealLock(prompt: String) {
+        // A secure activity can be absent from UiAutomation's accessibility tree even
+        // when its window is visible. Check actual resumed/focused lifecycle and rendered UI.
+        eventually("foreground lock activity resumed and focused") {
+            var focused = false
+            instrumentation.runOnMainSync {
+                focused = ActivityLifecycleMonitorRegistry.getInstance()
+                    .getActivitiesInStage(Stage.RESUMED).any { it is LockActivity && it.hasWindowFocus() }
+            }
+            focused
+        }
+        compose.waitUntil(timeoutMillis = 15_000) { compose.onAllNodesWithText(prompt).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText(prompt).assertIsDisplayed()
+    }
+
+    private fun awaitFixtureContent() {
+        automation = instrumentation.getUiAutomation(UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES)
+        eventually("fixture access after authentication", 60_000) { hasText("Fixture content visible") }
+    }
     private fun clickNode(node: AccessibilityNodeInfo): Boolean {
         var current: AccessibilityNodeInfo? = node
         while (current != null) {
@@ -159,20 +181,22 @@ class ForegroundProtectionTest {
             changeServiceThroughSettings(true)
             launchFixture()
             val prompt = context.getString(R.string.auth_app_locked, "Protection test fixture")
-            eventually("real lock activity") { hasText(prompt) }
+            awaitRealLock(prompt)
             android.util.Log.i("ForegroundProtectionTest", "Observed actual foreground lock")
             enterPin("111111")
-            eventually("wrong PIN rejection", 60_000) { hasText(context.getString(R.string.auth_denied)) }
+            val denial = context.getString(R.string.auth_denied)
+            compose.waitUntil(timeoutMillis = 60_000) { compose.onAllNodesWithText(denial).fetchSemanticsNodes().isNotEmpty() }
+            compose.onNodeWithText(denial).assertIsDisplayed()
             assertTrue(db.timelineEventDao().getAllEventsDirect().any { it.type == "AUTH_FAILURE" && it.appName == "Protection test fixture" })
             android.util.Log.i("ForegroundProtectionTest", "Rejected incorrect PIN and recorded event")
             SystemClock.sleep(1500)
             enterPin("246810")
-            eventually("fixture access after authentication", 60_000) { hasText("Fixture content visible") }
+            awaitFixtureContent()
             android.util.Log.i("ForegroundProtectionTest", "Authenticated and observed fixture")
             shell("input keyevent KEYCODE_HOME")
             eventually("leave fixture") { !AppLockManager.isForegroundTarget(fixture) }
             launchFixture()
-            eventually("relock after real app switch") { hasText(prompt) }
+            awaitRealLock(prompt)
             android.util.Log.i("ForegroundProtectionTest", "Observed relocking after application switch")
             // Profile-only protection must work even when the global timeout is longer.
             shell("input keyevent KEYCODE_HOME")
@@ -185,13 +209,13 @@ class ForegroundProtectionTest {
             assertTrue(db.lockedAppDao().isEffectivelyLocked(fixture))
             assertTrue(db.lockedAppDao().isImmediateProfileLock(fixture))
             launchFixture()
-            eventually("profile-only foreground lock") { hasText(prompt) }
+            awaitRealLock(prompt)
             enterPin("246810")
-            eventually("profile fixture access", 60_000) { hasText("Fixture content visible") }
+            awaitFixtureContent()
             shell("input keyevent KEYCODE_HOME")
             eventually("leave profile fixture") { !AppLockManager.isForegroundTarget(fixture) }
             launchFixture()
-            eventually("profile immediate relock despite global timeout") { hasText(prompt) }
+            awaitRealLock(prompt)
             android.util.Log.i("ForegroundProtectionTest", "Observed strict profile relock")
             changeServiceThroughSettings(false)
             assertFalse(AppLockManager.serviceConnected.value)
