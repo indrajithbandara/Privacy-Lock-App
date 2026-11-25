@@ -152,4 +152,15 @@
     <string name="auth_event_failure">වැරදි PIN එකක් ඇතුළත් කර ඇත.</string>
     <string name="auth_event_lockout">තාවකාලික PIN සත්‍යාපන අගුල.</string>
     <string name="accessibility_service_description">යෙදුම් අගුළු දැමීම සඳහා ප්‍රවේශ්‍යතා කවුළු සිදුවීම් සහ පැකේජ හඳුනාගැනීම් භාවිත කරයි. කවුළු අන්තර්ගතය කියවන්නේ නැත. Android සැකසුම් තුළ ඕනෑම විටක අවසරය අවලංගු කළ හැක.</string>
+    <string name="nav_profiles">පැතිකඩ</string>
+    <string name="profiles_explanation">සක්‍රීය පැතිකඩ මගින් තනිව අගුළු දැමූ යෙදුම්වලට අමතර ආරක්ෂාව එක් වේ. පැතිකඩක් අක්‍රීය කිරීමෙන් තනි අගුළු ඉවත් නොවේ.</string>
+    <string name="profile_error">පැතිකඩ යාවත්කාලීන කළ නොහැක.</string>
+    <string name="profile_create">නව පැතිකඩ</string>
+    <string name="profile_app_count">යෙදුම් %1$d</string>
+    <string name="profile_active">සක්‍රීය පැතිකඩ</string>
+    <string name="profile_inactive">අක්‍රීය පැතිකඩ</string>
+    <string name="profile_edit">පැතිකඩ සංස්කරණය කරන්න</string>
+    <string name="profile_delete">පැතිකඩ මකන්න</string>
+    <string name="profile_name">පැතිකඩ නම</string>
+    <string name="profile_protected">පැතිකඩකින් ආරක්ෂිතයි</string>
 </resources>

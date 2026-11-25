@@ -154,4 +154,15 @@
     <string name="accessibility_disclosure">App locking uses accessibility window events and package identifiers. It does not read window content. You can revoke this permission in Android Settings at any time.</string>
     <string name="auth_event_failure">Incorrect PIN entered.</string>
     <string name="auth_event_lockout">Temporary PIN authentication lockout.</string>
+    <string name="nav_profiles">Profiles</string>
+    <string name="profiles_explanation">Active profiles add protection to individually locked apps. Turning off a profile does not remove individual locks.</string>
+    <string name="profile_error">Unable to update profile.</string>
+    <string name="profile_create">New profile</string>
+    <string name="profile_app_count">%1$d apps</string>
+    <string name="profile_active">Active profile</string>
+    <string name="profile_inactive">Inactive profile</string>
+    <string name="profile_edit">Edit profile</string>
+    <string name="profile_delete">Delete profile</string>
+    <string name="profile_name">Profile name</string>
+    <string name="profile_protected">Protected by a profile</string>
 </resources>

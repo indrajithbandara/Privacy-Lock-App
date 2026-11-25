@@ -2,6 +2,8 @@ package com.example.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import androidx.room.ForeignKey
+import androidx.room.Index
 
 @Entity(tableName = "locked_apps")
 data class LockedApp(
@@ -13,6 +15,14 @@ data class LockedApp(
     val isPinned: Boolean = false,
     val iconName: String
 )
+
+@Entity(tableName = "protection_profiles")
+data class ProtectionProfile(@PrimaryKey(autoGenerate = true) val id: Long = 0, val name: String, val active: Boolean = false)
+
+@Entity(tableName = "profile_apps", primaryKeys = ["profileId", "packageName"],
+    foreignKeys = [ForeignKey(entity = ProtectionProfile::class, parentColumns = ["id"], childColumns = ["profileId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("packageName")])
+data class ProfileApp(val profileId: Long, val packageName: String)
 
 @Entity(tableName = "security_config")
 data class SecurityConfig(

@@ -21,6 +21,10 @@ This matrix records implementation separately from execution evidence. The last 
 
 ## Latest observed check results
 
+At `5dc66145`, API 24 and API 36 instrumentation both passed (run `45623778499`; API 24 executed 12 tests). The retry on `162f57a` also passed API 24, so the earlier installation failure was transient; the available failure output does not establish its precise underlying cause. The minimum SDK remains 24. Android CI run `45623778430` failed because the debug Robolectric test expected the previous launcher label; the assertion has been updated to match the approved internal brand.
+
+Protection profiles now use encrypted schema version 3 with an additive migration. Active profile app selections are combined with individual locks by the same database query used by the service. Profile changes require PIN confirmation, and profile management clears temporary sessions. Profile-specific timeouts, genuine third-party fixture interaction, physical-device validation and upgrade from a previously signed APK remain unverified or incomplete. The profile instrumentation tests cover union semantics and encrypted reopening, not actual foreground transitions.
+
 At `162f57a19fb6e5f64f347fedb62da6ae0aeb017e`, Android CI (`45619362717`), CodeQL (`45619362477`), Dependency Review (`45619362548`) and unsigned release validation (`45619362620`) succeeded. Emulator run `45619362656` succeeded on API 36 but API 24 stopped before executing tests at APK installation. No functional regression was established by that failure. A retry and an explicit emulator data partition size with storage diagnostics were initiated. All subsequent source changes require their own full validation.
 
 No production release or main-branch merge is authorized until the applicable acceptance criteria are actually verified. Physical device/OEM compatibility and production signing remain external dependencies.

@@ -93,11 +93,13 @@ class MainActivity : ComponentActivity() {
 fun PrivacyLockApp(viewModel: PrivacyViewModel, onScreenshotShieldToggle: (Boolean) -> Unit) {
     val context = LocalContext.current
     val config by viewModel.securityConfig.collectAsStateWithLifecycle()
+    val effectiveLocks by viewModel.effectiveLocks.collectAsStateWithLifecycle()
     var pendingChange by remember { mutableStateOf<Pair<LockedApp, Boolean>?>(null) }
     Scaffold(bottomBar = {
         NavigationBar(modifier = Modifier.testTag("app_navigation_bar")) {
             val destinations = listOf(
                 Triple("dashboard", stringResource(R.string.nav_apps), Icons.Default.Dashboard),
+                Triple("profiles", stringResource(R.string.nav_profiles), Icons.Default.List),
                 Triple("privacy_center", stringResource(R.string.nav_center), Icons.Default.Shield),
                 Triple("intruders", stringResource(R.string.nav_events), Icons.Default.History),
                 Triple("settings", stringResource(R.string.nav_settings), Icons.Default.Settings)
@@ -114,7 +116,7 @@ fun PrivacyLockApp(viewModel: PrivacyViewModel, onScreenshotShieldToggle: (Boole
                 "dashboard" -> DashboardScreen(viewModel, onLockChange = { app, locked ->
                     pendingChange = app to locked
                 }, onLaunchApp = { app ->
-                    if (app.isLocked && (!SecurityUtils.isAccessibilityServiceEnabled(context) || !AppLockManager.serviceConnected.value)) {
+                    if (app.packageName in effectiveLocks && (!SecurityUtils.isAccessibilityServiceEnabled(context) || !AppLockManager.serviceConnected.value)) {
                         Toast.makeText(context, context.getString(R.string.protection_unavailable), Toast.LENGTH_LONG).show()
                     } else {
                         val launch = context.packageManager.getLaunchIntentForPackage(app.packageName)
@@ -125,6 +127,7 @@ fun PrivacyLockApp(viewModel: PrivacyViewModel, onScreenshotShieldToggle: (Boole
                     }
                 })
                 "privacy_center" -> PrivacyCenterScreen(viewModel)
+                "profiles" -> ProfilesScreen(viewModel)
                 "intruders" -> IntruderSelfieScreen(viewModel)
                 "settings" -> SettingsScreen(viewModel, onScreenshotShieldToggle = onScreenshotShieldToggle)
             }

@@ -66,14 +66,13 @@ object AppLockManager {
         val db = AppDatabase.getDatabase(context)
         isInitialized = true
         CoroutineScope(Dispatchers.IO).launch {
-            db.lockedAppDao().getAllApps().collect { apps ->
-                val locked = apps.filter { it.isLocked }.map { it.packageName }.toSet()
+            db.lockedAppDao().getEffectiveLocks().collect { apps ->
+                val locked = apps.toSet()
                 synchronized(lockedPackages) {
                     lockedPackages.clear()
                     lockedPackages.addAll(locked)
                 }
-                val removed = _lockedAppsFlow.value - locked
-                removed.forEach { lockPackage(it) }
+                if (_lockedAppsFlow.value != locked) clearTemporaryUnlocks()
                 _lockedAppsFlow.value = locked
             }
         }

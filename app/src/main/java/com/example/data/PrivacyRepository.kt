@@ -37,6 +37,45 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
     val securityConfig: Flow<SecurityConfig?> = configDao.getConfig()
     val timelineEvents: Flow<List<TimelineEvent>> = eventDao.getEvents()
     val intruderSelfies: Flow<List<IntruderSelfie>> = selfieDao.getSelfies()
+    val profiles = db.protectionProfileDao().observeProfiles()
+    val profileMembers = db.protectionProfileDao().observeMembers()
+    val effectiveLocks = appDao.getEffectiveLocks()
+
+    suspend fun saveProfile(id: Long?, name: String, packages: Set<String>) {
+        val normalized = name.trim()
+        require(normalized.length in 1..60)
+        val eligible = withContext(Dispatchers.IO) { packages.filter { AppLockManager.canProtect(context, it) } }
+        require(eligible.size == packages.size)
+        db.withTransaction {
+            check(configDao.getConfigDirect()?.hashedPin?.isNotEmpty() == true)
+            val dao = db.protectionProfileDao()
+            val profileId = if (id == null) dao.insert(ProtectionProfile(name = normalized)) else {
+                checkNotNull(dao.get(id))
+                dao.rename(id, normalized)
+                id
+            }
+            dao.clearMembers(profileId)
+            dao.insertMembers(eligible.map { ProfileApp(profileId, it) })
+        }
+        AppLockManager.clearTemporaryUnlocks()
+    }
+
+    suspend fun setProfileActive(id: Long, active: Boolean) {
+        db.withTransaction {
+            check(configDao.getConfigDirect()?.hashedPin?.isNotEmpty() == true)
+            checkNotNull(db.protectionProfileDao().get(id))
+            db.protectionProfileDao().setActive(id, active)
+        }
+        AppLockManager.clearTemporaryUnlocks()
+    }
+
+    suspend fun deleteProfile(id: Long) {
+        db.withTransaction {
+            check(configDao.getConfigDirect()?.hashedPin?.isNotEmpty() == true)
+            db.protectionProfileDao().delete(id)
+        }
+        AppLockManager.clearTemporaryUnlocks()
+    }
 
     suspend fun getApp(packageName: String): LockedApp? = appDao.getApp(packageName)
 

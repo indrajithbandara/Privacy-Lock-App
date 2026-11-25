@@ -152,4 +152,15 @@
     <string name="auth_event_failure">தவறான PIN உள்ளிடப்பட்டது.</string>
     <string name="auth_event_lockout">தற்காலிக PIN அங்கீகாரப் பூட்டு.</string>
     <string name="accessibility_service_description">செயலிப் பூட்டு அணுகல்தன்மைச் சாளர நிகழ்வுகளையும் தொகுப்பு அடையாளங்களையும் பயன்படுத்துகிறது. சாளர உள்ளடக்கத்தைப் படிப்பதில்லை. Android அமைப்புகளில் இந்த அனுமதியை எப்போது வேண்டுமானாலும் ரத்துசெய்யலாம்.</string>
+    <string name="nav_profiles">சுயவிவரங்கள்</string>
+    <string name="profiles_explanation">செயலில் உள்ள சுயவிவரங்கள் தனிப்பட்ட பூட்டுகளுடன் பாதுகாப்பைச் சேர்க்கின்றன. சுயவிவரத்தை முடக்குவது தனிப்பட்ட பூட்டுகளை நீக்காது.</string>
+    <string name="profile_error">சுயவிவரத்தைப் புதுப்பிக்க முடியவில்லை.</string>
+    <string name="profile_create">புதிய சுயவிவரம்</string>
+    <string name="profile_app_count">%1$d பயன்பாடுகள்</string>
+    <string name="profile_active">செயலில் உள்ள சுயவிவரம்</string>
+    <string name="profile_inactive">செயலற்ற சுயவிவரம்</string>
+    <string name="profile_edit">சுயவிவரத்தைத் திருத்து</string>
+    <string name="profile_delete">சுயவிவரத்தை நீக்கு</string>
+    <string name="profile_name">சுயவிவரப் பெயர்</string>
+    <string name="profile_protected">சுயவிவரத்தால் பாதுகாக்கப்படுகிறது</string>
 </resources>

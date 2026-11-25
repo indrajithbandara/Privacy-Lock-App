@@ -38,14 +38,15 @@ fun PrivacyCenterScreen(
     modifier: Modifier = Modifier
 ) {
     val apps by viewModel.allApps.collectAsStateWithLifecycle()
+    val effectiveLocks by viewModel.effectiveLocks.collectAsStateWithLifecycle()
     val config by viewModel.securityConfig.collectAsStateWithLifecycle()
     val timeline by viewModel.timelineEvents.collectAsStateWithLifecycle()
     val failures = timeline.count { it.type == "AUTH_FAILURE" }
     var confirmClear by remember { mutableStateOf(false) }
     var authenticateClear by remember { mutableStateOf(false) }
 
-    val lockedCount = remember(apps) { apps.count { it.isLocked } }
-    val safeCount = remember(apps) { apps.count { !it.isLocked } }
+    val lockedCount = apps.count { it.packageName in effectiveLocks }
+    val safeCount = apps.count { it.packageName !in effectiveLocks }
 
     LazyColumn(
         modifier = modifier

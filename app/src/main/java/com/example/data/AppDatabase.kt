@@ -5,6 +5,8 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.withTransaction
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import android.util.AtomicFile
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -16,9 +18,11 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         LockedApp::class,
         SecurityConfig::class,
         TimelineEvent::class,
-        IntruderSelfie::class
+        IntruderSelfie::class,
+        ProtectionProfile::class,
+        ProfileApp::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -27,8 +31,16 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun securityConfigDao(): SecurityConfigDao
     abstract fun timelineEventDao(): TimelineEventDao
     abstract fun intruderSelfieDao(): IntruderSelfieDao
+    abstract fun protectionProfileDao(): ProtectionProfileDao
 
     companion object {
+        internal val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("CREATE TABLE IF NOT EXISTS protection_profiles (id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, name TEXT NOT NULL, active INTEGER NOT NULL)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS profile_apps (profileId INTEGER NOT NULL, packageName TEXT NOT NULL, PRIMARY KEY(profileId, packageName), FOREIGN KEY(profileId) REFERENCES protection_profiles(id) ON UPDATE NO ACTION ON DELETE CASCADE)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_profile_apps_packageName ON profile_apps(packageName)")
+            }
+        }
         private const val LEGACY = "privacy_lock_db"
         private const val ENCRYPTED = "privacy_lock_encrypted_v1"
 
@@ -45,6 +57,7 @@ abstract class AppDatabase : RoomDatabase() {
             System.loadLibrary("sqlcipher")
             return Room.databaseBuilder(context, AppDatabase::class.java, name)
                 .openHelperFactory(SupportOpenHelperFactory(passphrase))
+                .addMigrations(MIGRATION_2_3)
                 .build()
         }
 
@@ -62,7 +75,7 @@ abstract class AppDatabase : RoomDatabase() {
                 target.lockedAppDao().getAllAppsDirect()
                 if (!marker.baseFile.exists()) {
                     if (legacyExists) {
-                        val source = Room.databaseBuilder(context, AppDatabase::class.java, legacyName).build()
+                        val source = Room.databaseBuilder(context, AppDatabase::class.java, legacyName).addMigrations(MIGRATION_2_3).build()
                         try { copyLegacy(source, target) } finally { source.close() }
                     }
                     val output = marker.startWrite()

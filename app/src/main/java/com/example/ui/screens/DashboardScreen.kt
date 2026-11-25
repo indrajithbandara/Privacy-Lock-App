@@ -33,6 +33,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun DashboardScreen(viewModel: PrivacyViewModel, modifier: Modifier = Modifier, onLockChange: (LockedApp, Boolean) -> Unit, onLaunchApp: (LockedApp) -> Unit) {
     val apps by viewModel.allApps.collectAsStateWithLifecycle()
+    val effectiveLocks by viewModel.effectiveLocks.collectAsStateWithLifecycle()
     val config by viewModel.securityConfig.collectAsStateWithLifecycle()
     val connected by AppLockManager.serviceConnected.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -53,13 +54,13 @@ fun DashboardScreen(viewModel: PrivacyViewModel, modifier: Modifier = Modifier, 
         onDispose { lifecycle.removeObserver(observer) }
     }
     val enrolled = config?.hashedPin?.isNotEmpty() == true
-    val configuredCount = apps.count { it.isLocked && it.packageName in eligible }
+    val configuredCount = apps.count { it.packageName in effectiveLocks && it.packageName in eligible }
     val ready = enrolled && permission && connected
     val filtered = apps.filter { app ->
         (app.packageName in eligible) && (app.name.contains(viewModel.searchQuery, true) || app.packageName.contains(viewModel.searchQuery, true)) &&
             when (viewModel.selectedCategory) {
-                "Locked" -> app.isLocked
-                "Unlocked" -> !app.isLocked
+                "Locked" -> app.packageName in effectiveLocks
+                "Unlocked" -> app.packageName !in effectiveLocks
                 "Pinned" -> app.isPinned
                 else -> true
             }
@@ -103,7 +104,7 @@ fun DashboardScreen(viewModel: PrivacyViewModel, modifier: Modifier = Modifier, 
                     InstalledAppIcon(packageName = app.packageName, size = 44)
                     Column(Modifier.weight(1f)) {
                         Text(app.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(if (app.isLocked) stringResource(R.string.lock_configured) else stringResource(R.string.lock_not_configured), style = MaterialTheme.typography.bodySmall)
+                        Text(if (app.isLocked) stringResource(R.string.lock_configured) else if (app.packageName in effectiveLocks) stringResource(R.string.profile_protected) else stringResource(R.string.lock_not_configured), style = MaterialTheme.typography.bodySmall)
                         TextButton(onClick = { onLaunchApp(app) }, contentPadding = PaddingValues(0.dp)) { Text(stringResource(R.string.open_app)) }
                     }
                     IconButton(onClick = { viewModel.toggleAppPinned(app.packageName, !app.isPinned) }) {

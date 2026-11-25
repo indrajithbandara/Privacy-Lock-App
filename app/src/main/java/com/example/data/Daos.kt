@@ -8,6 +8,11 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface LockedAppDao {
+    @Query("SELECT EXISTS(SELECT 1 FROM locked_apps WHERE packageName = :packageName AND isLocked = 1 UNION ALL SELECT 1 FROM profile_apps JOIN protection_profiles ON profile_apps.profileId = protection_profiles.id WHERE packageName = :packageName AND active = 1)")
+    suspend fun isEffectivelyLocked(packageName: String): Boolean
+
+    @Query("SELECT packageName FROM locked_apps WHERE isLocked = 1 UNION SELECT packageName FROM profile_apps JOIN protection_profiles ON profile_apps.profileId = protection_profiles.id WHERE active = 1")
+    fun getEffectiveLocks(): Flow<List<String>>
     @Query("SELECT * FROM locked_apps ORDER BY isPinned DESC, name ASC")
     fun getAllApps(): Flow<List<LockedApp>>
 
@@ -40,6 +45,28 @@ interface LockedAppDao {
 
     @Query("DELETE FROM locked_apps WHERE packageName = :packageName")
     suspend fun deleteApp(packageName: String)
+}
+
+@Dao
+interface ProtectionProfileDao {
+    @Query("SELECT * FROM protection_profiles ORDER BY name, id")
+    fun observeProfiles(): Flow<List<ProtectionProfile>>
+    @Query("SELECT * FROM profile_apps")
+    fun observeMembers(): Flow<List<ProfileApp>>
+    @Query("SELECT * FROM protection_profiles WHERE id = :id")
+    suspend fun get(id: Long): ProtectionProfile?
+    @Insert
+    suspend fun insert(profile: ProtectionProfile): Long
+    @Query("UPDATE protection_profiles SET name = :name WHERE id = :id")
+    suspend fun rename(id: Long, name: String)
+    @Query("UPDATE protection_profiles SET active = :active WHERE id = :id")
+    suspend fun setActive(id: Long, active: Boolean)
+    @Query("DELETE FROM protection_profiles WHERE id = :id")
+    suspend fun delete(id: Long)
+    @Query("DELETE FROM profile_apps WHERE profileId = :id")
+    suspend fun clearMembers(id: Long)
+    @Insert
+    suspend fun insertMembers(members: List<ProfileApp>)
 }
 
 @Dao

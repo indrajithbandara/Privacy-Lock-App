@@ -93,6 +93,25 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
     val intruderSelfies: StateFlow<List<IntruderSelfie>> = repository.intruderSelfies
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    val profiles = repository.profiles.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val profileMembers = repository.profileMembers.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val effectiveLocks = repository.effectiveLocks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun saveProfile(id: Long?, name: String, packages: Set<String>, result: (Boolean) -> Unit) = profileChange(result) {
+        repository.saveProfile(id, name, packages)
+    }
+    fun setProfileActive(id: Long, active: Boolean, result: (Boolean) -> Unit) = profileChange(result) {
+        repository.setProfileActive(id, active)
+    }
+    fun deleteProfile(id: Long, result: (Boolean) -> Unit) = profileChange(result) { repository.deleteProfile(id) }
+    private fun profileChange(result: (Boolean) -> Unit, action: suspend () -> Unit) {
+        viewModelScope.launch {
+            try { action(); result(true) }
+            catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled }
+            catch (_: Exception) { result(false) }
+        }
+    }
+
 
 
     // --- Actions ---
