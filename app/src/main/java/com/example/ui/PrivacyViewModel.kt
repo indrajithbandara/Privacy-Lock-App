@@ -66,7 +66,7 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
 
     init {
         val db = AppDatabase.getDatabase(application)
-        repository = PrivacyRepository(db)
+        repository = PrivacyRepository(db, application.applicationContext)
 
         viewModelScope.launch {
             repository.prepopulateIfNeeded(application)
@@ -434,12 +434,12 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
      * - "FAILED" if no match.
      */
     suspend fun verifyPin(pin: String): String {
-        if (repository.verifyPrimaryPin(pin)) {
+        val result = repository.verifyPrimaryPin(pin)
+        if (result.accepted) {
             isDecoyModeActive = false
             return "SUCCESS_NORMAL"
         }
-        repository.logAuthenticationFailure()
-        return "FAILED"
+        return if (result.retryAfterSeconds > 0) "LOCKED:${result.retryAfterSeconds}" else "FAILED"
     }
 
     /**
