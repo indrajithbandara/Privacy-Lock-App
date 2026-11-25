@@ -13,6 +13,12 @@ interface LockedAppDao {
 
     @Query("SELECT packageName FROM locked_apps WHERE isLocked = 1 UNION SELECT packageName FROM profile_apps JOIN protection_profiles ON profile_apps.profileId = protection_profiles.id WHERE active = 1")
     fun getEffectiveLocks(): Flow<List<String>>
+
+    @Query("SELECT DISTINCT packageName FROM profile_apps JOIN protection_profiles ON profile_apps.profileId = protection_profiles.id WHERE active = 1 AND forceImmediateRelock = 1")
+    fun getImmediateProfileLocks(): Flow<List<String>>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM profile_apps JOIN protection_profiles ON profile_apps.profileId = protection_profiles.id WHERE packageName = :packageName AND active = 1 AND forceImmediateRelock = 1)")
+    suspend fun isImmediateProfileLock(packageName: String): Boolean
     @Query("SELECT * FROM locked_apps ORDER BY isPinned DESC, name ASC")
     fun getAllApps(): Flow<List<LockedApp>>
 
@@ -59,6 +65,8 @@ interface ProtectionProfileDao {
     suspend fun insert(profile: ProtectionProfile): Long
     @Query("UPDATE protection_profiles SET name = :name WHERE id = :id")
     suspend fun rename(id: Long, name: String)
+    @Query("UPDATE protection_profiles SET forceImmediateRelock = :enabled WHERE id = :id")
+    suspend fun setImmediateRelock(id: Long, enabled: Boolean)
     @Query("UPDATE protection_profiles SET active = :active WHERE id = :id")
     suspend fun setActive(id: Long, active: Boolean)
     @Query("DELETE FROM protection_profiles WHERE id = :id")

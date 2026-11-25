@@ -326,6 +326,11 @@ fun TimelineLogItem(event: TimelineEvent) {
                     text = when (event.type) {
                         "AUTH_FAILURE" -> stringResource(R.string.auth_event_failure)
                         "AUTH_LOCKOUT" -> stringResource(R.string.auth_event_lockout)
+                        "PROFILE_CREATED" -> stringResource(R.string.event_profile_created, event.description)
+                        "PROFILE_UPDATED" -> stringResource(R.string.event_profile_updated, event.description)
+                        "PROFILE_ACTIVATED" -> stringResource(R.string.event_profile_activated, event.description)
+                        "PROFILE_DEACTIVATED" -> stringResource(R.string.event_profile_deactivated, event.description)
+                        "PROFILE_DELETED" -> stringResource(R.string.event_profile_deleted, event.description)
                         else -> event.description
                     },
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),

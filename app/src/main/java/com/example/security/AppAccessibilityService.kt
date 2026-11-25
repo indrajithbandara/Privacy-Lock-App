@@ -82,7 +82,7 @@ class AppAccessibilityService : AccessibilityService() {
                 val db = withContext(Dispatchers.IO) { AppDatabase.getDatabase(applicationContext) }
                 val configuration = db.securityConfigDao().getConfigDirect()
                 AppLockManager.reportServiceConnected(true)
-                if (previous != null && previous != name && configuration?.autoLockTimeoutSeconds == 0) {
+                if (previous != null && previous != name && (configuration?.autoLockTimeoutSeconds == 0 || db.lockedAppDao().isImmediateProfileLock(previous))) {
                     AppLockManager.lockPackage(previous)
                 }
                 if (!AppLockManager.canProtect(applicationContext, name)) return@launch

@@ -41,7 +41,7 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
     val profileMembers = db.protectionProfileDao().observeMembers()
     val effectiveLocks = appDao.getEffectiveLocks()
 
-    suspend fun saveProfile(id: Long?, name: String, packages: Set<String>) {
+    suspend fun saveProfile(id: Long?, name: String, packages: Set<String>, immediateRelock: Boolean) {
         val normalized = name.trim()
         require(normalized.length in 1..60)
         val eligible = withContext(Dispatchers.IO) { packages.filter { AppLockManager.canProtect(context, it) } }
@@ -49,13 +49,15 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
         db.withTransaction {
             check(configDao.getConfigDirect()?.hashedPin?.isNotEmpty() == true)
             val dao = db.protectionProfileDao()
-            val profileId = if (id == null) dao.insert(ProtectionProfile(name = normalized)) else {
+            val profileId = if (id == null) dao.insert(ProtectionProfile(name = normalized, forceImmediateRelock = immediateRelock)) else {
                 checkNotNull(dao.get(id))
                 dao.rename(id, normalized)
+                dao.setImmediateRelock(id, immediateRelock)
                 id
             }
             dao.clearMembers(profileId)
             dao.insertMembers(eligible.map { ProfileApp(profileId, it) })
+            logEvent(if (id == null) "PROFILE_CREATED" else "PROFILE_UPDATED", normalized)
         }
         AppLockManager.clearTemporaryUnlocks()
     }
@@ -63,8 +65,9 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
     suspend fun setProfileActive(id: Long, active: Boolean) {
         db.withTransaction {
             check(configDao.getConfigDirect()?.hashedPin?.isNotEmpty() == true)
-            checkNotNull(db.protectionProfileDao().get(id))
+            val profile = checkNotNull(db.protectionProfileDao().get(id))
             db.protectionProfileDao().setActive(id, active)
+            logEvent(if (active) "PROFILE_ACTIVATED" else "PROFILE_DEACTIVATED", profile.name)
         }
         AppLockManager.clearTemporaryUnlocks()
     }
@@ -72,7 +75,9 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
     suspend fun deleteProfile(id: Long) {
         db.withTransaction {
             check(configDao.getConfigDirect()?.hashedPin?.isNotEmpty() == true)
+            val profile = checkNotNull(db.protectionProfileDao().get(id))
             db.protectionProfileDao().delete(id)
+            logEvent("PROFILE_DELETED", profile.name)
         }
         AppLockManager.clearTemporaryUnlocks()
     }

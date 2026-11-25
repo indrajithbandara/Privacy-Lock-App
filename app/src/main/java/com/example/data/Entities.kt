@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.ForeignKey
 import androidx.room.Index
+import androidx.room.ColumnInfo
 
 @Entity(tableName = "locked_apps")
 data class LockedApp(
@@ -17,7 +18,8 @@ data class LockedApp(
 )
 
 @Entity(tableName = "protection_profiles")
-data class ProtectionProfile(@PrimaryKey(autoGenerate = true) val id: Long = 0, val name: String, val active: Boolean = false)
+data class ProtectionProfile(@PrimaryKey(autoGenerate = true) val id: Long = 0, val name: String, val active: Boolean = false,
+    @ColumnInfo(defaultValue = "0") val forceImmediateRelock: Boolean = false)
 
 @Entity(tableName = "profile_apps", primaryKeys = ["profileId", "packageName"],
     foreignKeys = [ForeignKey(entity = ProtectionProfile::class, parentColumns = ["id"], childColumns = ["profileId"], onDelete = ForeignKey.CASCADE)],

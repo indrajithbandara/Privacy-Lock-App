@@ -84,7 +84,7 @@ fun InstalledAppIcon(
         if (bitmap != null) {
             Image(
                 bitmap = bitmap,
-                contentDescription = "App Icon",
+                contentDescription = null,
                 modifier = modifier
                     .size(size.dp)
                     .clip(RoundedCornerShape(12.dp))
@@ -102,7 +102,7 @@ fun InstalledAppIcon(
     ) {
         Icon(
             imageVector = Icons.Default.Android,
-            contentDescription = "Generic application icon",
+            contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
             modifier = Modifier.size((size * 0.55f).dp)
         )

@@ -4,18 +4,20 @@ This is an incomplete remediation, not a production release or independent audit
 
 | Finding | Severity | Status |
 | --- | --- | --- |
-| PL-01 | Critical | Removed implicit default PIN and hashCode fallback. Existing credential verification still needs secure enrollment and modern key derivation. |
-| PL-02 | Critical | Removed decoy credential unlock and require a configured PIN for new lock preferences. Authentication authorization and persistent throttling remain incomplete. |
-| PL-03 | High | Removed release-signing fallback and automatic publication. Signing and artifact validation remain pending. |
-| PL-04 | High | Room database is not encrypted. Removed destructive migration fallback; explicit legacy migrations and encryption remain necessary. |
-| PL-05 | High | Session expiry changed to monotonic elapsed time; device tests pending. |
-| PL-06 | High | Removed fake app seed list and obsolete demo records when absent from successful discovery. Other presentation simulations remain. |
-| PL-07 | High | Replaced new simulated avatar records with authentication failure events and a genuine event list. Legacy records remain in the database; deletion, retention and build verification remain pending. |
-| PL-08 | High | Protection lifecycle and permission handling remain incomplete. |
-| PL-09 | Medium | Corrected instrumentation test application ID; execution pending. |
-| PL-10 | High | Authentication configuration backup and biometric enrollment need secure design. |
+| PL-01 | Critical | Remediated in source: explicit enrollment, versioned PBKDF2 with unique salt, Keystore-wrapped verifier and constant-time comparison. Unit/device baseline passed at `a445dcde`; physical upgrade remains unverified. |
+| PL-02 | Critical | Remediated in source: removed decoy unlock, PIN confirmation for sensitive changes and persistent throttling. Unit/device baseline passed at `a445dcde`; full foreground test remains an open release gate. |
+| PL-03 | High | Release signing fallback removed; optimized unsigned artifact and checksum validation passed. Production key and fingerprint validation remain open. |
+| PL-04 | High | SQLCipher plus independent Keystore database key, verified legacy copy and additive migrations. Encryption/interruption/profile migration tests passed on API 24/36 at `a445dcde`; new schema migration requires its own run. |
+| PL-05 | High | Monotonic session expiry, screen-off clearing and timed foreground check implemented. Session unit/device tests passed at `a445dcde`; actual foreground/OEM behavior remains open. |
+| PL-06 | High | Removed simulated app fixtures from production and switched to actual installed-app discovery; repository behavior tests passed. Real install/remove and OEM scenarios remain unverified. |
+| PL-07 | High | Genuine local failed PIN/lockout events, explicit retention/deletion, no new avatar or entered-PIN storage. Legacy masked records preserved for compatibility; retention tests passed. |
+| PL-08 | High | Lifecycle handling, permission status, profile-aware authoritative lock query, owner-safe exclusions and degraded warning implemented. Actual foreground/permission integration is still a release gate. |
+| PL-09 | Medium | Corrected instrumentation application ID and validated API 24/36, including internal branding at `a445dcde`. |
+| PL-10 | High | Export limited to appearance preferences; strong per-operation biometric key and PIN-authorized enrollment implemented. Physical enrollment, invalidation and recovery remain open. |
 
 Android accessibility-based overlays are not an operating-system security boundary. Device owners must retain control of permissions, settings, emergency functions and uninstall. Do not distribute as a production security application until critical and high findings are resolved and validated on devices.
+
+This current register supersedes the historical milestones below, which are retained as chronological evidence. Applicable [OWASP MASVS](https://mas.owasp.org/MASVS/) groups include STORAGE, CRYPTO, AUTH, PLATFORM, CODE and PRIVACY. Passing CodeQL and unit tests is not a full MASVS assessment or a claim of certification.
 
 ## CI evidence
 

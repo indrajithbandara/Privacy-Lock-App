@@ -14,6 +14,7 @@ import com.example.data.PrivacyRepository
 import com.example.security.AppLockManager
 import com.example.security.SecurityUtils
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.first
 import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,8 +54,11 @@ class ForegroundProtectionTest {
             if (current.isClickable && current.performAction(AccessibilityNodeInfo.ACTION_CLICK)) return true
             current = current.parent
         }
-        // Settings rows may expose non-clickable text or omit accessibility click actions.
-        // Tap the visible label on the real emulator screen as an ordinary user would.
+        return tapNode(node)
+    }
+
+    private fun tapNode(node: AccessibilityNodeInfo): Boolean {
+        // Settings rows may omit click actions. Also use ordinary touches for the PIN keypad.
         if (!node.isVisibleToUser) return false
         val bounds = Rect().also(node::getBoundsInScreen)
         if (bounds.isEmpty) return false
@@ -101,7 +105,17 @@ class ForegroundProtectionTest {
 
     private fun launchFixture() { shell("am start -W -n $fixture/.FixtureActivity") }
     private fun enterPin(pin: String) {
-        pin.forEach { digit -> eventually("keypad digit") { clickText(digit.toString()) } }
+        pin.forEachIndexed { index, digit ->
+            eventually("visible keypad digit") {
+                nodes().firstOrNull { it.isVisibleToUser && it.text?.toString() == digit.toString() }?.let(::tapNode) == true
+            }
+            // Let Compose consume the touch and recompose before the next digit.
+            SystemClock.sleep(350)
+            if (Build.VERSION.SDK_INT >= 30 && index < pin.lastIndex) {
+                val expected = context.getString(R.string.auth_digits_entered, index + 1)
+                eventually("PIN length indicator") { nodes().any { it.stateDescription?.toString() == expected } }
+            }
+        }
     }
 
     @Test fun realForegroundPromptRejectsWrongPinAndRelocksAfterSwitch() = runBlocking {
@@ -116,6 +130,7 @@ class ForegroundProtectionTest {
         val serviceWasEnabled = SecurityUtils.isAccessibilityServiceEnabled(context)
         assertFalse("Use a fresh emulator permission state", serviceWasEnabled)
         var failure: Throwable? = null
+        var profileId: Long? = null
         try {
             assertTrue(repository.changePrimaryPin("", "246810"))
             repository.updateConfig { it.copy(autoLockTimeoutSeconds = 0, randomizeKeypad = false, biometricsEnabled = false) }
@@ -129,18 +144,37 @@ class ForegroundProtectionTest {
             eventually("real lock activity") { hasText(prompt) }
             android.util.Log.i("ForegroundProtectionTest", "Observed actual foreground lock")
             enterPin("111111")
-            eventually("wrong PIN rejection") { hasText(context.getString(R.string.auth_denied)) }
+            eventually("wrong PIN rejection", 60_000) { hasText(context.getString(R.string.auth_denied)) }
             assertTrue(db.timelineEventDao().getAllEventsDirect().any { it.type == "AUTH_FAILURE" && it.appName == "Protection test fixture" })
             android.util.Log.i("ForegroundProtectionTest", "Rejected incorrect PIN and recorded event")
             SystemClock.sleep(1500)
             enterPin("246810")
-            eventually("fixture access after authentication") { hasText("Fixture content visible") }
+            eventually("fixture access after authentication", 60_000) { hasText("Fixture content visible") }
             android.util.Log.i("ForegroundProtectionTest", "Authenticated and observed fixture")
             shell("input keyevent KEYCODE_HOME")
             eventually("leave fixture") { !AppLockManager.isForegroundTarget(fixture) }
             launchFixture()
             eventually("relock after real app switch") { hasText(prompt) }
             android.util.Log.i("ForegroundProtectionTest", "Observed relocking after application switch")
+            // Profile-only protection must work even when the global timeout is longer.
+            shell("input keyevent KEYCODE_HOME")
+            repository.updateConfig { it.copy(autoLockTimeoutSeconds = 300) }
+            repository.saveProfile(null, "Emulator fixture profile", setOf(fixture), true)
+            val activeProfile = repository.profiles.first().single { it.name == "Emulator fixture profile" }
+            profileId = activeProfile.id
+            repository.setProfileActive(activeProfile.id, true)
+            repository.toggleAppLock(fixture, false)
+            assertTrue(db.lockedAppDao().isEffectivelyLocked(fixture))
+            assertTrue(db.lockedAppDao().isImmediateProfileLock(fixture))
+            launchFixture()
+            eventually("profile-only foreground lock") { hasText(prompt) }
+            enterPin("246810")
+            eventually("profile fixture access", 60_000) { hasText("Fixture content visible") }
+            shell("input keyevent KEYCODE_HOME")
+            eventually("leave profile fixture") { !AppLockManager.isForegroundTarget(fixture) }
+            launchFixture()
+            eventually("profile immediate relock despite global timeout") { hasText(prompt) }
+            android.util.Log.i("ForegroundProtectionTest", "Observed strict profile relock")
             changeServiceThroughSettings(false)
             assertFalse(AppLockManager.serviceConnected.value)
         } catch (error: Throwable) {
@@ -148,6 +182,7 @@ class ForegroundProtectionTest {
             throw error
         } finally {
             // Restore disposable test state without changing any permission through privileged APIs.
+            profileId?.let { repository.deleteProfile(it) }
             repository.toggleAppLock(fixture, false)
             db.securityConfigDao().insertConfig(previous)
             AppLockManager.clearTemporaryUnlocks()

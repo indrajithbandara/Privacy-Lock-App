@@ -36,13 +36,14 @@ object AppLockManager {
 
     private var isInitialized = false
     private var autoLockTimeoutSeconds = 0
+    @Volatile private var immediateProfilePackages: Set<String> = emptySet()
 
     @Volatile private var foregroundTarget: String? = null
 
     fun setForegroundTarget(packageName: String?) {
         val previous = foregroundTarget
         foregroundTarget = packageName
-        if (previous != null && previous != packageName && getAutoLockTimeoutSeconds() == 0) {
+        if (previous != null && previous != packageName && getAutoLockTimeoutSeconds(previous) == 0) {
             lockPackage(previous)
         }
         if (previous != packageName) _sessionRevision.update { it + 1 }
@@ -81,6 +82,15 @@ object AppLockManager {
             }
         }
         CoroutineScope(Dispatchers.IO).launch {
+            db.lockedAppDao().getImmediateProfileLocks().collect { packages ->
+                val updated = packages.toSet()
+                if (immediateProfilePackages != updated) {
+                    immediateProfilePackages = updated
+                    clearTemporaryUnlocks()
+                }
+            }
+        }
+        CoroutineScope(Dispatchers.IO).launch {
             db.securityConfigDao().getConfig().collect { config ->
                 if (config != null) {
                     val changed = synchronized(this@AppLockManager) {
@@ -94,7 +104,8 @@ object AppLockManager {
         }
     }
 
-    fun getAutoLockTimeoutSeconds(): Int {
+    fun getAutoLockTimeoutSeconds(packageName: String? = null): Int {
+        if (packageName != null && packageName in immediateProfilePackages) return 0
         return synchronized(this) {
             autoLockTimeoutSeconds
         }
@@ -109,7 +120,7 @@ object AppLockManager {
     fun isPackageTemporarilyUnlocked(packageName: String): Boolean {
         return synchronized(temporarilyUnlockedPackages) {
             if (!temporarilyUnlockedPackages.contains(packageName)) return false
-            val timeout = synchronized(this@AppLockManager) { autoLockTimeoutSeconds }
+            val timeout = getAutoLockTimeoutSeconds(packageName)
             if (timeout > 0) {
                 val unlockTime = unlockedTimestamps[packageName] ?: return false
                 val elapsed = (android.os.SystemClock.elapsedRealtime() - unlockTime) / 1000
@@ -133,7 +144,7 @@ object AppLockManager {
 
     /** Remaining time for an existing timed session, independent of wall-clock changes. */
     fun remainingSessionMillis(packageName: String): Long? = synchronized(temporarilyUnlockedPackages) {
-        val timeout = getAutoLockTimeoutSeconds()
+        val timeout = getAutoLockTimeoutSeconds(packageName)
         if (timeout <= 0 || packageName !in temporarilyUnlockedPackages) return@synchronized null
         val started = unlockedTimestamps[packageName] ?: return@synchronized null
         (timeout * 1000L - (android.os.SystemClock.elapsedRealtime() - started)).coerceAtLeast(0L)

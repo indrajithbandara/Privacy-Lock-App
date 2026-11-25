@@ -22,7 +22,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         ProtectionProfile::class,
         ProfileApp::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -41,6 +41,11 @@ abstract class AppDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_profile_apps_packageName ON profile_apps(packageName)")
             }
         }
+        internal val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE protection_profiles ADD COLUMN forceImmediateRelock INTEGER NOT NULL DEFAULT 0")
+            }
+        }
         private const val LEGACY = "privacy_lock_db"
         private const val ENCRYPTED = "privacy_lock_encrypted_v1"
 
@@ -57,7 +62,7 @@ abstract class AppDatabase : RoomDatabase() {
             System.loadLibrary("sqlcipher")
             return Room.databaseBuilder(context, AppDatabase::class.java, name)
                 .openHelperFactory(SupportOpenHelperFactory(passphrase))
-                .addMigrations(MIGRATION_2_3)
+                .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
                 .build()
         }
 
@@ -75,7 +80,7 @@ abstract class AppDatabase : RoomDatabase() {
                 target.lockedAppDao().getAllAppsDirect()
                 if (!marker.baseFile.exists()) {
                     if (legacyExists) {
-                        val source = Room.databaseBuilder(context, AppDatabase::class.java, legacyName).addMigrations(MIGRATION_2_3).build()
+                        val source = Room.databaseBuilder(context, AppDatabase::class.java, legacyName).addMigrations(MIGRATION_2_3, MIGRATION_3_4).build()
                         try { copyLegacy(source, target) } finally { source.close() }
                     }
                     val output = marker.startWrite()

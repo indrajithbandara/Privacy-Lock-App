@@ -163,4 +163,11 @@
     <string name="profile_delete">පැතිකඩ මකන්න</string>
     <string name="profile_name">පැතිකඩ නම</string>
     <string name="profile_protected">පැතිකඩකින් ආරක්ෂිතයි</string>
+    <string name="profile_immediate_relock">යෙදුම් මාරු කළ සෑම විටම නැවත අගුළු දමන්න (පොදු කාලසීමාවට වඩා දැඩියි)</string>
+    <string name="event_profile_created">පැතිකඩ නිර්මාණය කළා: %1$s</string>
+    <string name="event_profile_updated">පැතිකඩ යාවත්කාලීන කළා: %1$s</string>
+    <string name="event_profile_activated">පැතිකඩ සක්‍රීය කළා: %1$s</string>
+    <string name="event_profile_deactivated">පැතිකඩ අක්‍රීය කළා: %1$s</string>
+    <string name="event_profile_deleted">පැතිකඩ මකා දැමුවා: %1$s</string>
+    <string name="profile_switch">%1$s පැතිකඩ සක්‍රීය කරන්න</string>
 </resources>

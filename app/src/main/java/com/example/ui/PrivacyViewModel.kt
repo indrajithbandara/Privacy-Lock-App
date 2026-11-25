@@ -97,8 +97,8 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
     val profileMembers = repository.profileMembers.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val effectiveLocks = repository.effectiveLocks.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun saveProfile(id: Long?, name: String, packages: Set<String>, result: (Boolean) -> Unit) = profileChange(result) {
-        repository.saveProfile(id, name, packages)
+    fun saveProfile(id: Long?, name: String, packages: Set<String>, immediateRelock: Boolean, result: (Boolean) -> Unit) = profileChange(result) {
+        repository.saveProfile(id, name, packages, immediateRelock)
     }
     fun setProfileActive(id: Long, active: Boolean, result: (Boolean) -> Unit) = profileChange(result) {
         repository.setProfileActive(id, active)

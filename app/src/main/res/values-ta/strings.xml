@@ -163,4 +163,11 @@
     <string name="profile_delete">சுயவிவரத்தை நீக்கு</string>
     <string name="profile_name">சுயவிவரப் பெயர்</string>
     <string name="profile_protected">சுயவிவரத்தால் பாதுகாக்கப்படுகிறது</string>
+    <string name="profile_immediate_relock">பயன்பாட்டை மாற்றும்போதெல்லாம் மீண்டும் பூட்டு (பொது நேர வரம்பை விட கடுமையானது)</string>
+    <string name="event_profile_created">சுயவிவரம் உருவாக்கப்பட்டது: %1$s</string>
+    <string name="event_profile_updated">சுயவிவரம் புதுப்பிக்கப்பட்டது: %1$s</string>
+    <string name="event_profile_activated">சுயவிவரம் செயல்படுத்தப்பட்டது: %1$s</string>
+    <string name="event_profile_deactivated">சுயவிவரம் முடக்கப்பட்டது: %1$s</string>
+    <string name="event_profile_deleted">சுயவிவரம் நீக்கப்பட்டது: %1$s</string>
+    <string name="profile_switch">%1$s சுயவிவரத்தை செயல்படுத்து</string>
 </resources>
