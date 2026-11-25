@@ -427,11 +427,12 @@ fun SecureAuthDialog(
                                 verifying = true
                                 verifyScope.launch {
                                     try {
-                                        if (onVerify(submitted) == "SUCCESS_NORMAL") {
+                                        val result = onVerify(submitted)
+                                        if (result == "SUCCESS_NORMAL") {
                                             errorMessage = null
                                             onSuccess()
                                         } else {
-                                            errorMessage = "Incorrect security code. Attempt recorded."
+                                            errorMessage = if (result.startsWith("LOCKED:")) "Try again in ${result.substringAfter(':')}s." else "Authentication denied."
                                         }
                                     } finally {
                                         verifying = false
