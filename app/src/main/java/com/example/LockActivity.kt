@@ -54,6 +54,7 @@ class LockActivity : FragmentActivity() {
     private var targetPackageName: String = ""
     private var appName: String = "Application"
     private var securityConfig: SecurityConfig? = null
+    private var activePrompt: BiometricPrompt? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,7 +65,7 @@ class LockActivity : FragmentActivity() {
 
         targetPackageName = intent.getStringExtra("TARGET_PACKAGE_NAME") ?: ""
 
-        if (targetPackageName.isEmpty()) {
+        if (targetPackageName.isEmpty() || !AppLockManager.canProtect(this, targetPackageName)) {
             finish()
             return
         }
@@ -138,8 +139,20 @@ class LockActivity : FragmentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        val requested = intent.getStringExtra("TARGET_PACKAGE_NAME")
+        if (requested != targetPackageName) {
+            setIntent(intent)
+            recreate()
+        }
+    }
+
     private fun unlockApp() {
-        AppLockManager.temporarilyUnlockPackage(targetPackageName)
+        if (isFinishing || isDestroyed) return
+        if (AppLockManager.isForegroundTarget(targetPackageName)) {
+            AppLockManager.temporarilyUnlockPackage(targetPackageName)
+        }
         finish()
     }
 
@@ -151,6 +164,7 @@ class LockActivity : FragmentActivity() {
         )
         if (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS) {
             val executor = ContextCompat.getMainExecutor(this)
+            activePrompt?.cancelAuthentication()
             val biometricPrompt = BiometricPrompt(this, executor, object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
@@ -173,8 +187,15 @@ class LockActivity : FragmentActivity() {
                 .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
                 .build()
 
+            activePrompt = biometricPrompt
             biometricPrompt.authenticate(promptInfo)
         }
+    }
+
+    override fun onDestroy() {
+        activePrompt?.cancelAuthentication()
+        activePrompt = null
+        super.onDestroy()
     }
 
     private fun goHomeAndFinish() {
