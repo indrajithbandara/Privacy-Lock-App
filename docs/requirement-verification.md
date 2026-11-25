@@ -17,6 +17,10 @@ This matrix records implementation separately from execution evidence. The last 
 | Localization | English, Sinhala and Tamil dashboard, navigation, events, authentication and settings resources; localized accessibility disclosure | Linguistic review and layout validation outstanding; historical free-text event descriptions remain as originally recorded |
 | Release | Optimized unsigned APK/AAB; restricted signed validation workflow | Unsigned run 9 succeeded; production signing and certificate match not executed |
 | CodeQL and dependencies | Advanced CodeQL and Dependency Review workflows | Both passed at commit `9462adbe`; latest rerun required; no independent audit claim |
-| Branding and repository rename | Proposed name only | Material potential conflicting mobile security app; see [brand review](brand-availability.md) |
+| Branding and repository rename | Debug-only Untouched: Privacy Lock identity, launcher vectors and SVG/PNG assets | Debug identity test added; public rename and release remain gated by material potential conflicting mobile security app; see [brand review](brand-availability.md) |
+
+## Latest observed check results
+
+At `162f57a19fb6e5f64f347fedb62da6ae0aeb017e`, Android CI (`45619362717`), CodeQL (`45619362477`), Dependency Review (`45619362548`) and unsigned release validation (`45619362620`) succeeded. Emulator run `45619362656` succeeded on API 36 but API 24 stopped before executing tests at APK installation. No functional regression was established by that failure. A retry and an explicit emulator data partition size with storage diagnostics were initiated. All subsequent source changes require their own full validation.
 
 No production release or main-branch merge is authorized until the applicable acceptance criteria are actually verified. Physical device/OEM compatibility and production signing remain external dependencies.
