@@ -40,7 +40,11 @@ fun SettingsScreen(
     val context = LocalContext.current
     LaunchedEffect(Unit) { viewModel.loadEventRetention() }
     var pendingRetention by remember { mutableStateOf<Int?>(null) }
-    var pendingBiometric by remember { mutableStateOf<Boolean?>(null) }
+    var pendingSecurityChange by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val requestSecurityChange: (() -> Unit) -> Unit = { action ->
+        if (config?.hashedPin?.isNotEmpty() == true) pendingSecurityChange = action
+        else Toast.makeText(context, "Set up your primary PIN first.", Toast.LENGTH_SHORT).show()
+    }
 
     var showPinSetup by remember { mutableStateOf(false) }
     var currentPinInput by remember { mutableStateOf("") }
@@ -154,7 +158,11 @@ fun SettingsScreen(
                             checked = biometricEnabled,
                             enabled = config?.hashedPin?.isNotEmpty() == true,
                             onCheckedChange = { enabled ->
-                                pendingBiometric = enabled
+                                requestSecurityChange {
+                                    viewModel.setBiometricsEnabled(enabled) { success ->
+                                        if (!success) Toast.makeText(context, "Strong biometrics unavailable. Use your PIN.", Toast.LENGTH_LONG).show()
+                                    }
+                                }
                             },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
@@ -243,7 +251,7 @@ fun SettingsScreen(
                         Switch(
                             checked = lockNewActive,
                             onCheckedChange = { active ->
-                                viewModel.setLockNewlyInstalledApps(active)
+                                requestSecurityChange { viewModel.setLockNewlyInstalledApps(active) }
                             },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
@@ -330,7 +338,7 @@ fun SettingsScreen(
                         Switch(
                             checked = screenshotEnabled,
                             onCheckedChange = { enabled ->
-                                viewModel.setScreenshotProtection(enabled, onScreenshotShieldToggle)
+                                requestSecurityChange { viewModel.setScreenshotProtection(enabled, onScreenshotShieldToggle) }
                             },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
@@ -364,7 +372,7 @@ fun SettingsScreen(
                         }
                         Switch(
                             checked = randomizeEnabled,
-                            onCheckedChange = { enabled -> viewModel.setRandomizeKeypad(enabled) },
+                            onCheckedChange = { enabled -> requestSecurityChange { viewModel.setRandomizeKeypad(enabled) } },
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
                                 checkedTrackColor = MaterialTheme.colorScheme.primary
@@ -535,21 +543,22 @@ fun SettingsScreen(
         }
     }
 
-    SecureAuthDialog(isOpen = pendingBiometric != null, title = "Confirm biometric setting", randomizeKeypad = config?.randomizeKeypad == true,
+    SecureAuthDialog(isOpen = pendingSecurityChange != null, title = "Confirm security setting", randomizeKeypad = config?.randomizeKeypad == true,
         isPinConfigured = config?.hashedPin?.isNotEmpty() == true, onVerify = viewModel::verifyPin,
-        onDismiss = { pendingBiometric = null }, onSuccess = {
-            pendingBiometric?.let { enabled -> viewModel.setBiometricsEnabled(enabled) { success ->
-                if (!success) Toast.makeText(context, "Strong biometrics unavailable. Use your PIN.", Toast.LENGTH_LONG).show()
-            } }
-            pendingBiometric = null
+        onDismiss = { pendingSecurityChange = null }, onSuccess = {
+            val action = pendingSecurityChange
+            pendingSecurityChange = null
+            action?.invoke()
         })
 
     pendingRetention?.let { limit ->
         AlertDialog(onDismissRequest = { pendingRetention = null }, title = { Text("Change event retention?") },
             text = { Text(if (limit == 0) "Future events will be kept until you clear them." else "Older records beyond the selected limit will be permanently removed.") },
             confirmButton = { TextButton(onClick = {
-                viewModel.setEventRetention(limit) { success ->
-                    if (!success) Toast.makeText(context, "Unable to update retention", Toast.LENGTH_SHORT).show()
+                requestSecurityChange {
+                    viewModel.setEventRetention(limit) { success ->
+                        if (!success) Toast.makeText(context, "Unable to update retention", Toast.LENGTH_SHORT).show()
+                    }
                 }
                 pendingRetention = null
             }) { Text("Apply") } }, dismissButton = { TextButton(onClick = { pendingRetention = null }) { Text("Cancel") } })
@@ -697,7 +706,7 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    viewModel.setAutoLockTimeoutSeconds(sec)
+                                    requestSecurityChange { viewModel.setAutoLockTimeoutSeconds(sec) }
                                     showTimeoutSelector = false
                                 }
                                 .padding(vertical = 12.dp, horizontal = 8.dp),
@@ -706,7 +715,7 @@ fun SettingsScreen(
                             RadioButton(
                                 selected = (config?.autoLockTimeoutSeconds ?: 0) == sec,
                                 onClick = {
-                                    viewModel.setAutoLockTimeoutSeconds(sec)
+                                    requestSecurityChange { viewModel.setAutoLockTimeoutSeconds(sec) }
                                     showTimeoutSelector = false
                                 }
                             )
@@ -737,7 +746,7 @@ fun SettingsScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    viewModel.setFailedAttemptLimit(limit)
+                                    requestSecurityChange { viewModel.setFailedAttemptLimit(limit) }
                                     showLimitSelector = false
                                 }
                                 .padding(vertical = 12.dp, horizontal = 8.dp),
@@ -746,7 +755,7 @@ fun SettingsScreen(
                             RadioButton(
                                 selected = (config?.failedAttemptLimit ?: 5) == limit,
                                 onClick = {
-                                    viewModel.setFailedAttemptLimit(limit)
+                                    requestSecurityChange { viewModel.setFailedAttemptLimit(limit) }
                                     showLimitSelector = false
                                 }
                             )

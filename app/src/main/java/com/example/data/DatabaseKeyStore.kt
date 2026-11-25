@@ -16,13 +16,13 @@ internal object DatabaseKeyStore {
     private const val ALIAS = "privacy_lock_database_v1"
     private val aad = "privacy-lock-database-v1".toByteArray(Charsets.UTF_8)
 
-    private fun key(create: Boolean): SecretKey {
+    private fun key(create: Boolean, alias: String): SecretKey {
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        val existing = store.getKey(ALIAS, null)
+        val existing = store.getKey(alias, null)
         if (existing is SecretKey) return existing
-        check(create && !store.containsAlias(ALIAS)) { "Database key is unavailable" }
+        check(create && !store.containsAlias(alias)) { "Database key is unavailable" }
         return KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore").apply {
-            init(KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+            init(KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
                 .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                 .setKeySize(256)
@@ -31,13 +31,13 @@ internal object DatabaseKeyStore {
     }
 
     @Synchronized
-    fun loadOrCreate(context: Context, encryptedDatabaseExists: Boolean): ByteArray {
-        val file = AtomicFile(File(context.noBackupFilesDir, "database_key_v1"))
+    fun loadOrCreate(context: Context, encryptedDatabaseExists: Boolean, fileName: String = "database_key_v1", alias: String = ALIAS): ByteArray {
+        val file = AtomicFile(File(context.noBackupFilesDir, fileName))
         if (file.baseFile.exists()) {
             val blob = file.readFully()
             require(blob.size == 60) { "Invalid database key envelope" }
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            cipher.init(Cipher.DECRYPT_MODE, key(false), GCMParameterSpec(128, blob.copyOfRange(0, 12)))
+            cipher.init(Cipher.DECRYPT_MODE, key(false, alias), GCMParameterSpec(128, blob.copyOfRange(0, 12)))
             cipher.updateAAD(aad)
             return cipher.doFinal(blob.copyOfRange(12, blob.size)).also { require(it.size == 32) }
         }
@@ -45,7 +45,7 @@ internal object DatabaseKeyStore {
         val raw = ByteArray(32).also(SecureRandom()::nextBytes)
         try {
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-            cipher.init(Cipher.ENCRYPT_MODE, key(true))
+            cipher.init(Cipher.ENCRYPT_MODE, key(true, alias))
             cipher.updateAAD(aad)
             require(cipher.iv.size == 12)
             val blob = cipher.iv + cipher.doFinal(raw)

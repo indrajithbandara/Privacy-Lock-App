@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.LockedApp
 import com.example.data.TimelineEvent
 import com.example.ui.PrivacyViewModel
+import com.example.ui.components.SecureAuthDialog
 import com.example.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -38,6 +39,8 @@ fun PrivacyCenterScreen(
     val config by viewModel.securityConfig.collectAsStateWithLifecycle()
     val timeline by viewModel.timelineEvents.collectAsStateWithLifecycle()
     val failures = timeline.count { it.type == "AUTH_FAILURE" }
+    var confirmClear by remember { mutableStateOf(false) }
+    var authenticateClear by remember { mutableStateOf(false) }
 
     val lockedCount = remember(apps) { apps.count { it.isLocked } }
     val safeCount = remember(apps) { apps.count { !it.isLocked } }
@@ -139,7 +142,7 @@ fun PrivacyCenterScreen(
                         description = "Requests Android screenshot protection for this application's own window.",
                         scoreValue = "Off",
                         isActive = screenshotShieldEnabled,
-                        onResolve = { viewModel.setScreenshotProtection(!screenshotShieldEnabled) {} }
+                        onResolve = { viewModel.currentScreen = "settings" }
                     )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
@@ -151,7 +154,7 @@ fun PrivacyCenterScreen(
                         description = "Shuffles keypad digits to reduce predictable patterns.",
                         scoreValue = "Off",
                         isActive = keypadRandomized,
-                        onResolve = { viewModel.setRandomizeKeypad(!keypadRandomized) }
+                        onResolve = { viewModel.currentScreen = "settings" }
                     )
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
@@ -181,7 +184,7 @@ fun PrivacyCenterScreen(
                     modifier = Modifier.padding(start = 4.dp, top = 8.dp)
                 )
                 if (timeline.isNotEmpty()) {
-                    TextButton(onClick = { viewModel.clearTimeline() }) {
+                    TextButton(onClick = { confirmClear = true }) {
                         Text("Clear log", color = MaterialTheme.colorScheme.error)
                     }
                 }
@@ -209,6 +212,15 @@ fun PrivacyCenterScreen(
             }
         }
     }
+    if (confirmClear) {
+        AlertDialog(onDismissRequest = { confirmClear = false }, title = { Text("Clear security events?") },
+            text = { Text("All stored timeline records will be permanently removed. Your PIN is required.") },
+            confirmButton = { TextButton(onClick = { confirmClear = false; authenticateClear = true }) { Text("Continue") } },
+            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Cancel") } })
+    }
+    SecureAuthDialog(isOpen = authenticateClear, title = "Confirm event deletion", randomizeKeypad = config?.randomizeKeypad == true,
+        isPinConfigured = config?.hashedPin?.isNotEmpty() == true, onVerify = viewModel::verifyPin,
+        onDismiss = { authenticateClear = false }, onSuccess = { authenticateClear = false; viewModel.clearTimeline() })
 }
 
 /**

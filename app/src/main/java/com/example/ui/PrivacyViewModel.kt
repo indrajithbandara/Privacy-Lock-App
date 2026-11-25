@@ -18,19 +18,14 @@ import com.example.data.LockedApp
 import com.example.data.PrivacyRepository
 import com.example.data.SecurityConfig
 import com.example.data.TimelineEvent
-import com.example.security.SecurityUtils
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.security.SecureRandom
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "privacy_settings")
 private val SCREENSHOT_PROTECTION_KEY = booleanPreferencesKey("screenshot_protection")
@@ -38,24 +33,14 @@ private val SCREENSHOT_PROTECTION_KEY = booleanPreferencesKey("screenshot_protec
 class PrivacyViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository: PrivacyRepository
-    private val secureRandom = SecureRandom()
 
     // Screen State
     var currentScreen by mutableStateOf("dashboard") // "dashboard", "privacy_center", "intruders", "settings"
-    var isAuthDialogOpen by mutableStateOf(false)
-    var authDialogTitle by mutableStateOf("Authenticate")
-    var authSuccessCallback by mutableStateOf<(() -> Unit)?>(null)
-    var simulatedAppToLaunch by mutableStateOf<LockedApp?>(null)
-
-    // Decoy State
-    var isDecoyModeActive by mutableStateOf(false)
 
     // Search and Filters
     var searchQuery by mutableStateOf("")
     var selectedCategory by mutableStateOf("All") // "All", "System", "Social", "Finance", "Locked"
 
-    // Temporary Unlock State
-    var tempUnlockExpiryTime by mutableStateOf<Long?>(null)
 
     // Screenshot Protection Live State Flow from DataStore (Default: true / ON)
     val isScreenshotProtectionEnabled: StateFlow<Boolean> = application.applicationContext.dataStore.data
@@ -78,7 +63,7 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
                     .first()
                 val current = repository.getConfigDirect()
                 if (current.screenshotProtection != dataStoreEnabled) {
-                    repository.saveConfig(current.copy(screenshotProtection = dataStoreEnabled))
+                    repository.updateConfig { it.copy(screenshotProtection = dataStoreEnabled) }
                 }
             } catch (e: Exception) {
                 // Ignore
@@ -108,19 +93,6 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
     val intruderSelfies: StateFlow<List<IntruderSelfie>> = repository.intruderSelfies
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Filtered Apps Flow for Display
-    val filteredApps: StateFlow<List<LockedApp>> = combine(
-        allApps,
-        MutableStateFlow("").apply { 
-            // Workaround to bind searchQuery as reactive flow
-            viewModelScope.launch {
-                combine(MutableStateFlow(""), MutableStateFlow("")) { _, _ -> }.collect {}
-            }
-        }
-    ) { apps, _ ->
-        // Direct filtering inside Compose is easier, but providing a reactive base helps
-        apps
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
 
     // --- Actions ---
@@ -196,25 +168,13 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    /**
-     * Setup a Decoy PIN.
-     */
-    fun setupDecoyPin(pin: String) {
-        viewModelScope.launch {
-            val hashed = withContext(Dispatchers.Default) { SecurityUtils.hashPin(pin) }
-            val current = repository.getConfigDirect()
-            repository.saveConfig(current.copy(hashedDecoyPin = hashed))
-            repository.logEvent("CONFIG", "Decoy stealth security PIN updated successfully.")
-        }
-    }
 
     /**
      * Updates randomized keypad preference.
      */
     fun setRandomizeKeypad(enabled: Boolean) {
         viewModelScope.launch {
-            val current = repository.getConfigDirect()
-            repository.saveConfig(current.copy(randomizeKeypad = enabled))
+            repository.updateConfig { it.copy(randomizeKeypad = enabled) }
             val desc = if (enabled) "Randomized PIN keypad layout enabled." else "Standard PIN keypad layout enabled."
             repository.logEvent("CONFIG", desc)
         }
@@ -229,36 +189,14 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
             getApplication<Application>().applicationContext.dataStore.edit { preferences ->
                 preferences[SCREENSHOT_PROTECTION_KEY] = enabled
             }
-            val current = repository.getConfigDirect()
-            repository.saveConfig(current.copy(screenshotProtection = enabled))
+            repository.updateConfig { it.copy(screenshotProtection = enabled) }
             val desc = if (enabled) "Screenshot and screen-recording shield activated." else "Screenshot shield deactivated."
             repository.logEvent("CONFIG", desc)
             onUpdated(enabled)
         }
     }
 
-    /**
-     * Updates auto-lock new apps.
-     */
-    fun setAutoLockNewApps(enabled: Boolean) {
-        viewModelScope.launch {
-            val current = repository.getConfigDirect()
-            repository.saveConfig(current.copy(autoLockNewApps = enabled))
-            val desc = if (enabled) "Automatic locking for newly installed packages enabled." else "Auto-locking for new apps disabled."
-            repository.logEvent("CONFIG", desc)
-        }
-    }
 
-    /**
-     * Updates decoy mode type.
-     */
-    fun setDecoyModeType(type: String) {
-        viewModelScope.launch {
-            val current = repository.getConfigDirect()
-            repository.saveConfig(current.copy(decoyModeType = type))
-            repository.logEvent("CONFIG", "Decoy mode type updated to '$type'.")
-        }
-    }
 
     /**
      * Updates biometrics enabled preference.
@@ -275,7 +213,7 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
                 } else {
                     withContext(Dispatchers.IO) { com.example.security.BiometricKey.remove() }
                 }
-                repository.saveConfig(current.copy(biometricsEnabled = enabled))
+                repository.updateConfig { it.copy(biometricsEnabled = enabled) }
                 repository.logEvent("CONFIG", if (enabled) "Biometric authentication enabled." else "Biometric authentication disabled.")
                 onResult(true)
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
@@ -289,8 +227,8 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
      */
     fun setAutoLockTimeoutSeconds(seconds: Int) {
         viewModelScope.launch {
-            val current = repository.getConfigDirect()
-            repository.saveConfig(current.copy(autoLockTimeoutSeconds = seconds))
+            require(seconds in setOf(-1, 0, 15, 30, 60, 300, 600))
+            repository.updateConfig { it.copy(autoLockTimeoutSeconds = seconds) }
             val label = when (seconds) {
                 0 -> "Immediately"
                 15 -> "15 seconds"
@@ -309,8 +247,7 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
      */
     fun setVibrateOnKeyPress(enabled: Boolean) {
         viewModelScope.launch {
-            val current = repository.getConfigDirect()
-            repository.saveConfig(current.copy(vibrateOnKeyPress = enabled))
+            repository.updateConfig { it.copy(vibrateOnKeyPress = enabled) }
         }
     }
 
@@ -319,59 +256,25 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
      */
     fun setLockNewlyInstalledApps(enabled: Boolean) {
         viewModelScope.launch {
-            val current = repository.getConfigDirect()
-            repository.saveConfig(current.copy(lockNewlyInstalledApps = enabled, autoLockNewApps = enabled))
+            repository.updateConfig { it.copy(lockNewlyInstalledApps = enabled, autoLockNewApps = enabled) }
             val desc = if (enabled) "Auto-lock for future newly installed apps activated." else "Auto-lock for newly installed apps deactivated."
             repository.logEvent("CONFIG", desc)
         }
     }
 
-    /**
-     * Updates intruder detection.
-     */
-    fun setIntruderDetectionEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            val current = repository.getConfigDirect()
-            repository.saveConfig(current.copy(intruderDetectionEnabled = enabled))
-            val desc = if (enabled) "Intruder detection activated." else "Intruder detection deactivated."
-            repository.logEvent("CONFIG", desc)
-        }
-    }
 
-    /**
-     * Updates intruder selfie capture.
-     */
-    fun setIntruderSelfieEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            val current = repository.getConfigDirect()
-            repository.saveConfig(current.copy(intruderSelfieEnabled = enabled))
-            val desc = if (enabled) "Intruder avatar captures on failed entry enabled." else "Intruder avatar captures disabled."
-            repository.logEvent("CONFIG", desc)
-        }
-    }
 
     /**
      * Updates failed attempt limit.
      */
     fun setFailedAttemptLimit(limit: Int) {
         viewModelScope.launch {
-            val current = repository.getConfigDirect()
-            repository.saveConfig(current.copy(failedAttemptLimit = limit))
+            require(limit in setOf(3, 5, 10))
+            repository.updateConfig { it.copy(failedAttemptLimit = limit) }
             repository.logEvent("CONFIG", "Failed PIN entry limit threshold set to $limit attempts.")
         }
     }
 
-    /**
-     * Setup a Panic PIN.
-     */
-    fun setupPanicPin(pin: String) {
-        viewModelScope.launch {
-            val hashed = withContext(Dispatchers.Default) { SecurityUtils.hashPin(pin) }
-            val current = repository.getConfigDirect()
-            repository.saveConfig(current.copy(hashedPanicPin = hashed))
-            repository.logEvent("CONFIG", "Panic security PIN configured.")
-        }
-    }
 
     /**
      * Serializes current SecurityConfig to a backup string format.
@@ -410,7 +313,7 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
                         }
                     }
                 }
-                repository.saveConfig(config)
+                repository.updateConfig { it.copy(themeMode = config.themeMode, vibrateOnKeyPress = config.vibrateOnKeyPress) }
                 repository.logEvent("CONFIG", "Privacy space configurations restored successfully from local backup.")
                 onComplete(true)
             } catch (e: Exception) {
@@ -424,8 +327,8 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
      */
     fun setThemeMode(mode: String) {
         viewModelScope.launch {
-            val current = repository.getConfigDirect()
-            repository.saveConfig(current.copy(themeMode = mode))
+            require(mode in setOf("SYSTEM", "LIGHT", "DARK"))
+            repository.updateConfig { it.copy(themeMode = mode) }
         }
     }
 
@@ -433,25 +336,14 @@ class PrivacyViewModel(application: Application) : AndroidViewModel(application)
      * Attempts to verify PIN.
      * Returns:
      * - "SUCCESS_NORMAL" if matches standard PIN.
-     * - "SUCCESS_DECOY" if matches decoy PIN.
      * - "FAILED" if no match.
      */
     suspend fun verifyPin(pin: String): String {
         val result = repository.verifyPrimaryPin(pin)
         if (result.accepted) {
-            isDecoyModeActive = false
             return "SUCCESS_NORMAL"
         }
         return if (result.retryAfterSeconds > 0) "LOCKED:${result.retryAfterSeconds}" else "FAILED"
     }
 
-    /**
-     * Resets decoy mode back to normal.
-     */
-    fun exitDecoyMode() {
-        isDecoyModeActive = false
-        viewModelScope.launch {
-            repository.logEvent("CONFIG", "Stealth Decoy mode deactivated. Main privacy space restored.")
-        }
-    }
 }

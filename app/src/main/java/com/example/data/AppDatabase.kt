@@ -48,19 +48,21 @@ abstract class AppDatabase : RoomDatabase() {
                 .build()
         }
 
-        private suspend fun openEncrypted(context: Context): AppDatabase {
-            val legacyExists = context.getDatabasePath(LEGACY).exists()
-            val encryptedExists = context.getDatabasePath(ENCRYPTED).exists()
-            val marker = AtomicFile(File(context.noBackupFilesDir, "database_migration_v1"))
+        internal suspend fun openEncrypted(context: Context, legacyName: String = LEGACY, encryptedName: String = ENCRYPTED,
+                                           markerName: String = "database_migration_v1", keyName: String = "database_key_v1",
+                                           keyAlias: String = "privacy_lock_database_v1"): AppDatabase {
+            val legacyExists = context.getDatabasePath(legacyName).exists()
+            val encryptedExists = context.getDatabasePath(encryptedName).exists()
+            val marker = AtomicFile(File(context.noBackupFilesDir, markerName))
             if (marker.baseFile.exists()) check(encryptedExists) { "Migrated database is missing" }
-            val passphrase = DatabaseKeyStore.loadOrCreate(context, encryptedExists)
-            val target = buildEncrypted(context, ENCRYPTED, passphrase)
+            val passphrase = DatabaseKeyStore.loadOrCreate(context, encryptedExists, keyName, keyAlias)
+            val target = buildEncrypted(context, encryptedName, passphrase)
             try {
                 // Force open and schema validation before using or retiring the old database.
                 target.lockedAppDao().getAllAppsDirect()
                 if (!marker.baseFile.exists()) {
                     if (legacyExists) {
-                        val source = Room.databaseBuilder(context, AppDatabase::class.java, LEGACY).build()
+                        val source = Room.databaseBuilder(context, AppDatabase::class.java, legacyName).build()
                         try { copyLegacy(source, target) } finally { source.close() }
                     }
                     val output = marker.startWrite()
@@ -74,7 +76,7 @@ abstract class AppDatabase : RoomDatabase() {
                 }
                 // The verified copy and durable marker exist. Retire only the original database,
                 // including its journal/WAL, without touching any other user files.
-                if (legacyExists) check(context.deleteDatabase(LEGACY)) { "Legacy database cleanup failed" }
+                if (legacyExists) check(context.deleteDatabase(legacyName)) { "Legacy database cleanup failed" }
                 return target
             } catch (error: Throwable) {
                 target.close()

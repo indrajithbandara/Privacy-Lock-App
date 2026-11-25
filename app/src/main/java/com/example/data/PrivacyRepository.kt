@@ -45,10 +45,10 @@ class PrivacyRepository(private val db: AppDatabase, private val context: Contex
         return checkNotNull(configDao.getConfigDirect())
     }
 
-    suspend fun saveConfig(config: SecurityConfig) {
+    suspend fun updateConfig(transform: (SecurityConfig) -> SecurityConfig) {
         db.withTransaction {
-            val current = configDao.getConfigDirect()
-            configDao.insertConfig(if (current == null) config else config.copy(hashedPin = current.hashedPin))
+            val current = configDao.getConfigDirect() ?: SecurityConfig()
+            configDao.insertConfig(transform(current).copy(hashedPin = current.hashedPin))
         }
     }
 

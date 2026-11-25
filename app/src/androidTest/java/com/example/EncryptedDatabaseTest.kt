@@ -13,9 +13,58 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.security.SecureRandom
+import java.security.KeyStore
+import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 class EncryptedDatabaseTest {
+    @Test fun completeUpgradePersistsKeyAndRetiresOnlyVerifiedLegacyCopy() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val suffix = java.util.UUID.randomUUID().toString()
+        val legacy = "upgrade-test-legacy-$suffix"
+        val encrypted = "upgrade-test-encrypted-$suffix"
+        val marker = "upgrade-test-marker-$suffix"
+        val key = "upgrade-test-key-$suffix"
+        val alias = "upgrade-test-alias-$suffix"
+        val expected = SecurityConfig(hashedPin = "test-only-legacy-verifier", themeMode = "DARK", failedAttemptLimit = 3)
+        val app = LockedApp("fixture.app", "Fixture", "Other", true, true, true, "android")
+        try {
+            val source = Room.databaseBuilder(context, AppDatabase::class.java, legacy).build()
+            try {
+                source.lockedAppDao().insertApp(app)
+                source.securityConfigDao().insertConfig(expected)
+            } finally { source.close() }
+            // Simulate interruption after the encrypted target and its key were created, before copy.
+            val raw = com.example.data.DatabaseKeyStore.loadOrCreate(context, false, key, alias)
+            val interrupted = AppDatabase.buildEncrypted(context, encrypted, raw)
+            try { interrupted.lockedAppDao().getAllAppsDirect() } finally { interrupted.close(); raw.fill(0) }
+            assertTrue(context.getDatabasePath(legacy).exists())
+            assertFalse(File(context.noBackupFilesDir, marker).exists())
+            val migrated = AppDatabase.openEncrypted(context, legacy, encrypted, marker, key, alias)
+            try {
+                assertEquals(expected, migrated.securityConfigDao().getConfigDirect())
+                assertEquals(app, migrated.lockedAppDao().getApp(app.packageName))
+            } finally { migrated.close() }
+            assertFalse(context.getDatabasePath(legacy).exists())
+            assertTrue(File(context.noBackupFilesDir, marker).exists())
+            val reopened = AppDatabase.openEncrypted(context, legacy, encrypted, marker, key, alias)
+            try { assertEquals(expected, reopened.securityConfigDao().getConfigDirect()) } finally { reopened.close() }
+            // Failure to recover an existing key must never create a new empty database.
+            File(context.noBackupFilesDir, key).delete()
+            try {
+                AppDatabase.openEncrypted(context, legacy, encrypted, marker, key, alias).close()
+                fail("Opening an encrypted database without its key must fail")
+            } catch (_: IllegalStateException) { }
+            assertTrue(context.getDatabasePath(encrypted).exists())
+        } finally {
+            context.deleteDatabase(legacy)
+            context.deleteDatabase(encrypted)
+            File(context.noBackupFilesDir, marker).delete()
+            File(context.noBackupFilesDir, key).delete()
+            KeyStore.getInstance("AndroidKeyStore").apply { load(null); deleteEntry(alias) }
+        }
+    }
+
     @Test fun copiesExistingRowsAndReopensEncryptedDatabase() = runBlocking {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val sourceName = "migration-test-plain"
